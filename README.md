@@ -209,7 +209,7 @@ ln -s AGENTS.md .cursorrules
 
 ```
 headless-horseman-harness/
-├── AGENTS.md                 # System operacyjny agenta (Reguły 7.1 - 7.18)
+├── AGENTS.md                 # System operacyjny agenta (Reguły 7.1 - 7.21)
 ├── KNOWN_LIMITATIONS.md      # Co uprząż rozwiązuje, a czego NIE zastąpi
 ├── README.md                 # Główna dokumentacja projektu
 ├── install.sh                # Skrypt instalacyjny hooków gita
@@ -234,6 +234,7 @@ headless-horseman-harness/
 ├── docs/epistemic/           # Artefakty 7.20 (schemat + wzorce: uczciwy / gra w bramkę)
 ├── docs/decisions/           # Artefakty 7.21 (schemat + wzorce: podpisana / samo-akceptacja)
 ├── docs/architecture/        # Platforma monorepo, wymuszanie krytycyzmu, status napraw
+├── docs/research/            # Dowody: jak duże projekty degradują się pod AI (i co działa)
 ├── skills/                   # Skille inżynierskie
 │   ├── grill-me/             # Protokół wywiadu przed przystąpieniem do kodu
 │   ├── ub-mode/              # Reguły inżynierskie Uncle Boba

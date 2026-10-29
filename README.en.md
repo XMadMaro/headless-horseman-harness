@@ -83,7 +83,7 @@ A harness that is too heavy gets bypassed with `--no-verify`. So the default is 
 | 2 | **Preflight** | `preflight-gate.py` | coding without a **verbatim quote from every touched file** (proof of reading), plans starting with "implement", missing Subtract section, duplicate symbols, >15 files / >400 LOC |
 | 3 | **Decision** | `decision-gate.py` | moving on without a **human-signed** decision: ≥2 options with cost, `must_not` boundaries, observable `done_when`, self-approval forbidden (D7) |
 | 4 | Adversarial | `adversarial-review.sh` | silent fallbacks, `!important`, fake assertions, secrets, destructive migrations, tenant leaks — **added lines only** (deleting a sin is never punished) |
-| 5 | **Epistemic** | `epistemic-gate.py` | claims without `cmd`/`expected`/`observed`, `echo`-based proofs, `|| true` masking, `confidence: high` without an executed proof, hypotheses without a falsifier |
+| 5 | **Epistemic** | `epistemic-gate.py` | claims without `cmd`/`expected`/`observed`, `echo`-based proofs, `\|\| true` masking, `confidence: high` without an executed proof, hypotheses without a falsifier |
 | 6 | Gate Integrity | `gate-lock.sh` | a gate swapped for `exit 0`, a deleted gate, 18 empty headings instead of rules |
 | 7 | Orchestrator | `hhh-run.py` | running ahead: exit **3** = human decision required, **1** = agent's own work, **4** = no progress (breaker) |
 | 8 | Self-test | `selftest.sh` | the harness itself: every gate must pass *and* must block what it claims to block |
@@ -142,6 +142,23 @@ A model does not lie because it is malicious — it lies because **declaring is 
 | Loop forever | 0 | breaker on unchanged diff + failure set 2× |
 
 More on the reasoning: [`docs/architecture/CRITICAL-THINKING-ENFORCEMENT.md`](docs/architecture/CRITICAL-THINKING-ENFORCEMENT.md).
+
+---
+
+## How AI codebases actually drift
+
+Six measured signatures, each with the countermeasure that has evidence behind it. Full review with sources, sample sizes and a section on **where the evidence contradicts this repo** is in [`docs/research/AI-DEGRADATION-EVIDENCE.md`](docs/research/AI-DEGRADATION-EVIDENCE.md).
+
+| Signature | Number | Countermeasure that works |
+|---|---|---|
+| Refactoring dies, copy-paste wins | moved code 24.8% → 3.8%; duplicated blocks +81% (GitClear, 211M lines) | duplication check per commit, "subtract" step |
+| "Almost right" is slower than wrong | +19% time on mature repos, while devs believed −20% (METR RCT, 246 tasks) | proof must be *executed*, not described |
+| Bigger batches, worse stability | +25% AI adoption → −1.5% throughput, −7.2% stability (DORA 2024); stability still negative in 2025 | batch size limits, human sign-off |
+| The agent optimises the test, not the task | 54% of impossible tasks "passed" by cheating; **~0% when tests are hidden** (ImpossibleBench) | tests the agent cannot see or edit |
+| Hallucinated dependencies | 19.7% of recommended packages do not exist; 43% recur every run (USENIX 2025) | allow-list, verify before install |
+| Slop shifts the cost onto maintainers | ~1 in 4 incoming changes low quality; curl closed its bug bounty (confirmed <5%) | disclosure, reproduction required, price the claim |
+
+The uncomfortable finding for *this* repo: instructions written as prose are **faithfully followed but barely change outcomes** — human-written `AGENTS.md` gave +4% success at +19% cost, LLM-written gave −3% at +20% cost (ETH Zurich, 2026); and where rules were audited, "this file + this pattern" rules held at 100% while global properties held at 69%. That is the argument for mechanising rules instead of writing more of them.
 
 ---
 
