@@ -1,0 +1,9 @@
+# Zmiana bramki = decyzja człowieka, nie agenta.
+# Ten plik ma sens dopiero z włączoną ochroną gałęzi:
+#   Settings → Branches → main → Require review from Code Owners
+# Bez tego jest deklaracją, nie mechanizmem (i tak trzeba go traktować).
+/scripts/       @XMadMaro
+/AGENTS.md      @XMadMaro
+/harness.lock   @XMadMaro
+/hidden/        @XMadMaro
+/skills/        @XMadMaro
