@@ -2,6 +2,8 @@
 
 # 🐎 Headless Horseman Harness (HHH)
 
+**Polski** · [English](README.en.md)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Battle Tested](https://img.shields.io/badge/Battle--Tested-CityPulse%20(GovTech)-success)](https://github.com/XMadMaro/CityPulseV2)
 [![Zero LLM Gates](https://img.shields.io/badge/Gates-Deterministic%20(Zero%20LLM)-orange)](#-5-warstw-ochrony--co-dostajesz-w-pudełku)
@@ -68,45 +70,54 @@ Uprząż została wyjęta bezpośrednio z żywego projektu produkcyjnego **[City
 
 ---
 
-## 🛡️ 5 Warstw Ochrony — co dostajesz w pudełku
+## 🛡️ 8 Bramek — co realnie blokuje commit
 
-```
-            [ Prompt Użytkownika ]
-                      │
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 1. Inception Gate (/grill-me)            │ ──► Blokuje brakujące założenia i zgadywanie
- └────────────────────┬─────────────────────┘
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 2. ub-mode (Uncle Bob Discipline)        │ ──► Wymusza Subtract Before Add & Zero Placebo
- └────────────────────┬─────────────────────┘
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 3. Adversarial Code Review (Zero LLM)    │ ──► Skanuje git diff na 7 grzechów głównych
- └────────────────────┬─────────────────────┘
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 4. Visual Regression Gate                │ ──► Wykrywa zgnieciony layout na 1440px i 1024px
- └────────────────────┬─────────────────────┘
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 5. Gate Integrity Sentinel               │ ──► Blokuje próby osłabienia reguł w git hooks
- └────────────────────┬─────────────────────┘
-                      ▼
-         [ Bezpieczny Commit do Main ]
+```text
+  [ Intencja człowieka ]
+        │
+        ▼
+  Inception Gate .......... wywiad + WIP=1
+        │
+        ▼
+  Preflight (7.19) ........ czy pliki PRZECZYTANE? cytat z każdego
+        │                   plan od subtract/diagnose, brak duplikacji
+        ▼
+  🛑 DECYZJA: scope ....... podpis człowieka
+        │
+        ▼
+  Implementacja (agent) ... kod + test RED→GREEN
+        │
+        ▼
+  Adversarial Review ...... 7 grzechów, tylko linie dodawane, plik:linia
+        │
+        ▼
+  Epistemic (7.20) ........ dowody WYKONANE (--execute), nie zadeklarowane
+        │
+        ▼
+  🛑 DECYZJA: accept ...... podpis człowieka (nic bez odbioru)
+        │
+        ▼
+  Gate Integrity .......... harness.lock: podmiana bramki wykryta
+        │
+        ▼
+      [ Commit do main ]
 ```
 
-| # | Warstwa | Narzędzie | Co dokładnie blokuje? |
+Sterowanie całością: `python3 scripts/hhh-run.py --ticket CP-xxx --run`
+(exit 3 = STOP, potrzebna decyzja człowieka · exit 1 = robota agenta)
+
+| # | Bramka | Narzędzie | Co dokładnie blokuje |
 |---|---|---|---|
-| **1** | **Inception Gate** | `scripts/docs-provenance.py` + `docs/tasks/TEMPLATE.md` | Agent nie wejdzie w stan `IN_PROGRESS` bez udokumentowanego wywiadu `## Decyzje z wywiadu (/grill-me)` (min. 50 znaków, źródło danych, obsługa błędu, granice Must NOT). |
-| **2** | **ub-mode** | `AGENTS.md` (Reguła 7.17) + `scripts/ub-metrics.sh` | Wymusza *Subtract Before You Add* (wycięcie martwego kodu przed dodaniem nowego), *Attack the Premise*, *Null-Return Check* oraz raport złożoności cyklomatycznej (`crapper`) i duplikacji (`dryer`). |
-| **3** | **Adversarial Review** | `scripts/adversarial-review.sh` | Bezwzględny skaner `git diff origin/main...HEAD` wykrywający 7 grzechów głównych kodu bez użycia LLM (czysty, deterministyczny ripgrep/bash). |
-| **4** | **Visual Regression** | `e2e/visual-regression.spec.ts` | Testy Playwright na ekranach `1440x900` oraz `1024x768` (13-calowe laptopy) z wyłączonymi animacjami — chroni formularze przed zgnieceniem przez nawigację boczną. |
-| **5** | **Gate Integrity** | `scripts/gate-lock.sh` + `check-gate-integrity.sh` | Integralność **hash-pin** (`harness.lock`) + **zbiór** ID reguł. Podmiana bramki na `exit 0`, usunięcie bramki Inception i 18 pustych zaślepek zamiast reguł są wykrywane. |
-| **6** | **Preflight (7.19)** | `scripts/preflight-gate.py` | Agent nie napisze linijki kodu bez artefaktu: **cytat z każdego dotykanego pliku** (dowód lektury), plan zaczynający się od `subtract`/`diagnose`, jawna sekcja Subtract, blokada duplikacji symboli oraz budżet ≤15 plików / ≤400 LOC. |
-| **7** | **Epistemic (7.20)** | `scripts/epistemic-gate.py` | Każde twierdzenie ma `cmd` + `expected` + `observed`; `confidence: high` wymaga **wykonanego** dowodu (`--execute`); blokada dowodów autorskich (`echo`), maskowania (`\|\| true`) i komend spoza allowlisty; hipoteza bez falsyfikatora = FAIL. |
-| **8** | **Decision (7.21)** | `scripts/decision-gate.py` + `scripts/hhh-run.py` | Agent **zatrzymuje się** przed każdym krokiem decyzyjnym (`scope` → `approach` → `accept`) i musi mieć decyzję podpisaną przez człowieka: ≥2 opcje z ceną, `must_not`, obserwowalne `done_when`, fraza `Potwierdzam:`. **Zakaz samo-akceptacji (D7)**: agent nie podpisze własnej decyzji. Orkiestrator zwraca exit 3 = STOP dla człowieka. |
+| **1** | **Inception** | `docs-provenance.py` | `IN_PROGRESS` bez udokumentowanego wywiadu (`## Decyzje z wywiadu`, ≥50 znaków, źródło + obsługa błędu + Must NOT) oraz więcej niż jedno zadanie w toku (WIP=1). |
+| **2** | **Preflight (7.19)** | `preflight-gate.py` | Kod bez **cytatu z każdego dotykanego pliku** (dowód lektury, ±10 linii). Plan zaczynający się od `subtract`/`diagnose`. Brak sekcji Subtract. Duplikacja istniejącego symbolu. Budżet >15 plików / >400 LOC. |
+| **3** | **Decision: scope (7.21)** | `decision-gate.py` | Start bez decyzji podpisanej przez człowieka: ≥2 opcje z ceną, `must_not`, obserwowalne `done_when`, fraza `Potwierdzam:`. **Zakaz samo-akceptacji (D7).** |
+| **4** | **Adversarial** | `adversarial-review.sh` | 7 grzechów: silent fallback (`except: pass`, `catch {}`), `!important`, asercje pozorne, sekrety, `DROP` bez zatwierdzenia, zależności bez uzasadnienia, tenant leak (opt-in). **Tylko linie dodawane** — usunięcie grzechu nie jest karane (7.17). |
+| **5** | **Epistemic (7.20)** | `epistemic-gate.py` | Twierdzenie bez `cmd`/`expected`/`observed`. Dowód autorski (`echo`), maskowanie (`\|\| true`), komenda spoza allowlisty. `confidence: high` bez **wykonanego** dowodu. Hipoteza bez falsyfikatora. |
+| **6** | **Decision: accept (7.21)** | `decision-gate.py` | Zamknięcie bez odbioru przez człowieka. Decyzja nieodwracalna bez `acknowledged_irreversible` + `blast_radius`. Decyzja po terminie ważności. |
+| **7** | **Gate Integrity** | `gate-lock.sh` + `check-gate-integrity.sh` | Podmiana bramki (hash w `harness.lock`), usunięcie bramki, 18 pustych zaślepek zamiast reguł, wyjątki bez terminu. |
+| **8** | **Self-test** | `selftest.sh` | Regresja samej uprzęży: każda bramka musi **przejść** i **zablokować** to, co deklaruje (46 asercji). |
+
+**To nie są bramki** (świadomie): `ub-mode` to zestaw zasad w `AGENTS.md` (7.17) plus raport metryk, a `e2e/visual-regression.spec.ts` to **wzorzec** wymagający runnera Playwright — bez `package.json`, `playwright.config.ts` i baseline'ów nie chroni niczego.
 
 ---
 
@@ -124,8 +135,12 @@ bash install.sh
 # 1. Skopiuj pliki uprzęży (install.sh NIE pobiera nic z sieci — instaluje hooki w checkoucie)
 npx degit XMadMaro/headless-horseman-harness/. ./_harness && cp -r ./_harness/. . && rm -rf ./_harness
 
-# 2. Zainstaluj hooki (pre-commit: integralność + Inception + Preflight; pre-push: skaner + dowody)
+# 2. Zainstaluj hooki (pre-commit: integralność + preflight; pre-push: skaner + decyzje)
 bash install.sh
+
+# 2b. Włącz CI — GOTOWE workflowy leżą w docs/ci/ (token bez uprawnień `workflows`
+#     nie może zapisywać .github/workflows; bez tego kroku CI nie sprawdza bramek)
+cp docs/ci/gates.yml docs/ci/adversarial-review.yml .github/workflows/
 
 # 3. Weryfikacja: każda bramka musi przejść I zablokować to, co ma blokować
 bash scripts/selftest.sh                 # 26 asercji, oczekiwane: 26/26
