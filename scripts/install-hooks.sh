@@ -124,6 +124,11 @@ if [[ -d docs/epistemic && "$PROFILE" == "full" ]]; then
   done
 fi
 
+if [[ -f hidden/manifest.json ]]; then
+  echo "🐎 [HHH] Acceptance Gate: testy, których agent nie widzi"
+  python3 scripts/acceptance-gate.py --run || exit $?
+fi
+
 echo "✅ [HHH] pre-push OK"
 HOOK
 

@@ -31,6 +31,10 @@ PROTECTED=(
   "scripts/hhh-run.py"
   "install.sh"
   ".adversarial-allow"
+  "scripts/acceptance-gate.py"
+  "hidden/manifest.json"
+  "hidden/acceptance/01_lock_intact.sh"
+  "hidden/acceptance/02_fixtures_validate.sh"
   "tests/fixtures/negative/test.tsx"
   "tests/fixtures/negative/0099_test.sql"
 )

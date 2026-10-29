@@ -224,6 +224,29 @@ BYP="$(mktemp -d)"; cp -r . "$BYP/repo" 2>/dev/null
 expect "commit kodu bez preflight (obejście) => FAIL" 1 bash -c "cd '$BYP/repo' && bash scripts/check-gate-integrity.sh"
 rm -rf "$BYP"
 
+echo "═══ 9. Testy akceptacyjne (poza zasięgiem agenta) ═══"
+# ImpossibleBench: agent "przechodzi" testy, jeśli może je zobaczyć i zmienić.
+# Tu sprawdzamy, że mechanizm realnie tego broni — i że sam test umie zawieść.
+ACC="$(mktemp -d)"; cp -r . "$ACC/repo" 2>/dev/null
+expect "testy akceptacyjne przechodzą na czystym repo" 0 bash -c "cd '$ACC/repo' && python3 scripts/acceptance-gate.py --run"
+(
+  cd "$ACC/repo" || exit 1
+  echo 'exit 0' >> hidden/acceptance/01_lock_intact.sh
+)
+expect "agent dopisał linię do testu => STOP (tamper)" 3 bash -c "cd '$ACC/repo' && python3 scripts/acceptance-gate.py --run"
+(
+  cd "$ACC/repo" || exit 1
+  printf '#!/usr/bin/env bash\nexit 1\n' > hidden/acceptance/01_lock_intact.sh
+  python3 scripts/acceptance-gate.py --seal >/dev/null 2>&1
+)
+expect "test, który nie przechodzi => FAIL (nie tautologia)" 1 bash -c "cd '$ACC/repo' && python3 scripts/acceptance-gate.py --run"
+(
+  cd "$ACC/repo" || exit 1
+  echo '{"format":1,"tests":[]}' > hidden/manifest.json
+)
+expect "zerowa lista testów => FAIL (bramka nie może być pusta)" 2 bash -c "cd '$ACC/repo' && python3 scripts/acceptance-gate.py --run"
+rm -rf "$ACC"
+
 echo
 echo "──────────────────────────────────────────────────────────────"
 echo "SELFTEST: PASS=$PASS FAIL=$FAIL"

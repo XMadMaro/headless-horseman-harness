@@ -17,7 +17,7 @@ Template dyscypliny architektonicznej dla dużych projektów monorepo (TS + Pyth
 Zamiast kolejnego szablonu z gotowym frameworkiem (Next.js + Prisma) dostajesz **deterministyczną uprząż inżynierską**: bramki z kodem wyjścia, hash-pinem i własnym samotestem.
 
 **Uczciwa skala (zmierzona, nie deklarowana):** 7 bramek blokujących (`gate-lock`, Inception, Preflight, Epistemic, Decision, Adversarial, selftest) + 2 reguły procesu (7.19 myśl-przed-kodem, 7.20 budżet/anty-pętla). Nie „fizycznie uniemożliwiają” — **podnoszą cenę kłamstwa i obejścia**. Pozostałe reguły to umowa społeczna, której pilnuje review człowieka.
-Pełny stan: `docs/architecture/GATE-FIXES.md`. Dowód: `bash scripts/selftest.sh` → 46/46.
+Pełny stan: `docs/architecture/GATE-FIXES.md`. Dowód: `bash scripts/selftest.sh` → 50/50.
 
 ---
 
@@ -115,7 +115,9 @@ Sterowanie całością: `python3 scripts/hhh-run.py --ticket CP-xxx --run`
 | **5** | **Epistemic (7.20)** | `epistemic-gate.py` | Twierdzenie bez `cmd`/`expected`/`observed`. Dowód autorski (`echo`), maskowanie (`\|\| true`), komenda spoza allowlisty. `confidence: high` bez **wykonanego** dowodu. Hipoteza bez falsyfikatora. |
 | **6** | **Decision: accept (7.21)** | `decision-gate.py` | Zamknięcie bez odbioru przez człowieka. Decyzja nieodwracalna bez `acknowledged_irreversible` + `blast_radius`. Decyzja po terminie ważności. |
 | **7** | **Gate Integrity** | `gate-lock.sh` + `check-gate-integrity.sh` | Podmiana bramki (hash w `harness.lock`), usunięcie bramki, 18 pustych zaślepek zamiast reguł, wyjątki bez terminu. |
-| **8** | **Self-test** | `selftest.sh` | Regresja samej uprzęży: każda bramka musi **przejść** i **zablokować** to, co deklaruje (46 asercji). |
+| **8** | **Self-test** | `selftest.sh` | Regresja samej uprzęży: każda bramka musi **przejść** i **zablokować** to, co deklaruje (50 asercji). |
+
+Poza tą ósemką: `acceptance-gate.py` — testy akceptacyjne, których agent **nie widzi** (`hidden/`, sha256 + lock, podmiana = STOP). To nie jest bramka na deklaracje, tylko na produkt.
 
 **To nie są bramki** (świadomie): `ub-mode` to zestaw zasad w `AGENTS.md` (7.17) plus raport metryk, a `e2e/visual-regression.spec.ts` to **wzorzec** wymagający runnera Playwright — bez `package.json`, `playwright.config.ts` i baseline'ów nie chroni niczego.
 
@@ -226,7 +228,8 @@ headless-horseman-harness/
 │   ├── epistemic-gate.py     # 7.20: dowody wykonywalne (E1-E10)
 │   ├── decision-gate.py      # 7.21: punkty decyzyjne, zakaz samo-akceptacji (D1-D10)
 │   ├── hhh-run.py            # orkiestrator: bramki krok po kroku, STOP na decyzji
-│   ├── selftest.sh           # Macierz PASS/FAIL wszystkich bramek (46 asercji)
+│   ├── selftest.sh           # Macierz PASS/FAIL wszystkich bramek (50 asercji)
+│   ├── acceptance-gate.py    # Testy poza zasięgiem agenta (tamper=STOP, bez oracle)
 │   ├── install-hooks.sh      # Hooki git z backupem cudzych
 │   ├── ub-metrics.sh         # Pomiary złożoności cyklomatycznej i duplikacji
 │   └── config.sh             # Przykładowe wartości ścieżek (NIE panel konfiguracji)
@@ -235,6 +238,7 @@ headless-horseman-harness/
 ├── docs/decisions/           # Artefakty 7.21 (schemat + wzorce: podpisana / samo-akceptacja)
 ├── docs/architecture/        # Platforma monorepo, wymuszanie krytycyzmu, status napraw
 ├── docs/research/            # Dowody: jak duże projekty degradują się pod AI (i co działa)
+├── hidden/                   # Testy akceptacyjne, których agent NIE widzi (sha256 + lock)
 ├── skills/                   # Skille inżynierskie
 │   ├── grill-me/             # Protokół wywiadu przed przystąpieniem do kodu
 │   ├── ub-mode/              # Reguły inżynierskie Uncle Boba

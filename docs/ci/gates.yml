@@ -101,6 +101,20 @@ jobs:
       - name: Lista wymaganych decyzji dla aktywnego biletu
         run: python3 scripts/decision-gate.py --list --ticket CP-150
 
+  acceptance:
+    name: Testy akceptacyjne (poza zasięgiem agenta)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      # manifest pinuje sha256 testów: podmiana pliku = exit 3, zero uruchomień
+      - name: Integralność testów akceptacyjnych
+        run: python3 scripts/acceptance-gate.py --verify
+      - name: Wykonanie testów akceptacyjnych
+        run: python3 scripts/acceptance-gate.py --run
+
   selftest:
     name: Samotest uprzęży (macierz bramek)
     runs-on: ubuntu-latest
