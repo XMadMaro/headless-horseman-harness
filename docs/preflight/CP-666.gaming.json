@@ -1,0 +1,27 @@
+{
+  "ticket": "CP-666",
+  "kind": "feature",
+  "intent": {
+    "falsifiable": "dodać nowy moduł",
+    "non_goals": []
+  },
+  "files_touched": [
+    {
+      "path": "apps/api/does-not-exist.ts",
+      "line": 12,
+      "quote": "ta linia nigdy nie istniała w żadnym pliku",
+      "why": ""
+    },
+    {
+      "path": "AGENTS.md",
+      "line": 3,
+      "quote": "to zdanie nie występuje w AGENTS.md, agent go wymyślił",
+      "why": "nie otworzyłem pliku"
+    }
+  ],
+  "plan": ["implement", "test", "commit"],
+  "budget": { "max_files": 40, "max_loc": 2000 },
+  "reuse": [
+    { "new": "hash_file", "reuse_of": null, "justification": "" }
+  ]
+}

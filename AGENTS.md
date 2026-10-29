@@ -1,7 +1,10 @@
 # AGENTS.md — System Operacyjny Agenta (Monorepo Heavy Starter)
 
 > Ten plik jest źródłem prawdy dla agenta. `AGENTS.md` > prompt człowieka > pamięć modelu.
-> Każde naruszenie wykrywa `scripts/check-gate-integrity.sh`.
+> Zmiany TREŚCI bramek wykrywa `scripts/gate-lock.sh --check` (hash-pin). Naruszenia PROCESU wykrywają bramki 7.18–7.20.
+>
+> **Precedencja:** prawda repozytorium > bramki deterministyczne > governance > workflow > specjalista stacku > preferencje człowieka.
+> **Żaden skill nie unieważnia bramki.** Jeśli skill każe pominąć test, a bramka go wymaga — wygrywa bramka.
 
 ---
 
@@ -68,6 +71,40 @@ Zakaz 2 równoległych silników (np. `ChatService` + `RAGService`). Przy wymian
 - **Skille:** agent MUSI wywołać `skills/grill-me/SKILL.md` przed planem, `skills/ub-mode/SKILL.md` w implementacji, `skills/code-review/SKILL.md` przed `REVIEW`.
 - **Schema/Migrations:** każdy `DROP` wymaga `-- APPROVED_DESTRUCTIVE` (S5).
 - **Secrets:** `sk-, ghp_, BEGIN PRIVATE KEY` = `BLOCKING` (S4).
+
+## 7.19 Preflight: myśl, zanim napiszesz linijkę
+Zakaz tworzenia/edycji kodu bez artefaktu `docs/preflight/CP-xxx.json` (bramka: `scripts/preflight-gate.py`).
+
+**Zanim kod — zanurkuj i posprzątaj:**
+- **F2 Dive:** dla każdego pliku, który zamierzasz tknąć, wpisz `path` + **cytat istniejący w pliku** (±10 linii od `line`). Cytat niepasujący = plik nie został przeczytany. Nie zgaduj struktury.
+- **F5 Order:** `plan` zaczyna się od `subtract` / `diagnose` / `repro`. Implementacja jest **trzecim** krokiem, nie pierwszym.
+- **F4 Subtract:** sekcja `subtract` wskazuje realne pliki/symbole do usunięcia albo `greenfield_justification` ≥ 40 znaków. Paragraf 7.17 egzekwowany mechanicznie.
+- **F7 Duplication:** każdy nowy symbol ma `reuse_of` (istniejący!) albo uzasadnienie ≥ 20 znaków. Nazwa już istniejąca w repo bez `reuse_of` = duplikacja = blokada. **Frankenstein powstaje z duplikacji, nie z braku talentu.**
+- **F6 Budget:** ≤ 15 plików i ≤ 400 LOC na bilet. Więcej = rozbij, nie doklejaj.
+- **F3 Reprodukcja:** przy `kind=bug` wymagany `repro.cmd` + `observed_failure` ≥ 10 znaków. Brak repro = debugowanie na wyczucie.
+
+## 7.20 Budżet, anty-pętla, koniec przepalania tokenów
+- **Budżety:** krok ≤ 8k tokenów, bilet ≤ 40k, sesja: przy 70% → handoff i nowa sesja (nie „dociąganie”).
+- **Hipotezy:** 2 hipotezy na bug, 2 próby na hipotezę. Odrzucona hipoteza trafia do `.agent/state/ledger.jsonl` i **nie wraca**.
+- **Breaker:** hash zbioru niepowodzeń + znormalizowany diff bez zmian 2× ⇒ STOP (exit 3), pytanie do człowieka. Kręcenie się w miejscu to najdroższy błąd agenta.
+- **Dowody:** twierdzenie bez komendy nie istnieje (`scripts/epistemic-gate.py`, tryb `--execute` w CI).
+- **Eskalacja:** po 2 breakerach — `git bisect`, `owners`, pytanie do człowieka. Nie trzecia próba.
+
+## 7.21 Punkty decyzyjne: STOP i grill przed każdym krokiem
+Zakaz przejścia kroku bez **artefaktu decyzji** podpisanego przez człowieka (`docs/decisions/CP-xxx/<krok>.json`, bramka `scripts/decision-gate.py`).
+
+**Trzy punkty zatrzymania (i żadne inne):**
+- `scope` — co dowozimy (definicja ukończenia) i czego **NIE** robimy,
+- `approach` — który wariant i dlaczego (z ceną alternatyw),
+- `accept` — czy dowody wystarczają (podpis `DONE`).
+
+**Zakaz samo-akceptacji (D7):** `confirmed_by` ≠ `asked_by` i nie jest tożsamością agenta (`HHH_AGENT_IDENTITIES`). Agent nie może zatwierdzić własnej decyzji, nawet jeśli nazwie się jak człowiek.
+
+**Wymogi decyzji:** ≥ 2 opcje z ceną/ryzykiem, uzasadnienie ≥ 20 znaków, `must_not` niepuste, `done_when` obserwowalne komendą, fraza `Potwierdzam: RRRR-MM-DD, CP-xxx, krok=WYBÓR`, termin ważności. Decyzja nieodwracalna wymaga `acknowledged_irreversible` + `blast_radius`.
+
+**Sterowanie:** `python3 scripts/hhh-run.py --ticket CP-xxx --run`. Kody: 0 = zamknięte, **1 = błąd do naprawy przez agenta**, **3 = STOP, potrzebna decyzja człowieka**, 4 = brak postępu (breaker), 2 = błąd środowiska. Agent, który dostanie 3, **nie zgaduje** — woła `decision-gate.py --ask`.
+
+**Zakaz obchodzenia:** decyzja nie może być dopisana po fakcie. `asked_at` < `confirmed_at` < moment implementacji (kolejność commitów), a `--ask` działa tylko w terminalu (`isatty`) — nie w CI ani w pętli agenta.
 
 ---
 

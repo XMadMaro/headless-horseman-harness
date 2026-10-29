@@ -1,0 +1,21 @@
+{
+  "ticket": "CP-666",
+  "step": "scope",
+  "question": "Co robimy?",
+  "options": [
+    {
+      "id": "A",
+      "label": "wszystko"
+    }
+  ],
+  "chosen": "A",
+  "why": "bo tak",
+  "must_not": [],
+  "done_when": "działa",
+  "asked_by": "agent",
+  "asked_at": "2026-10-29T10:00:00",
+  "confirmed_by": "agent",
+  "confirmed_at": "2026-10-29T10:00:01",
+  "confirmation": "Potwierdzam: 2030-01-01, CP-666, scope=A",
+  "expires_at": "2020-01-01"
+}

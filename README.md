@@ -12,7 +12,30 @@
 
 Template dyscypliny architektonicznej dla dużych projektów monorepo (TS + Python, Nx/Turborepo/pnpm/uv), w których zjawisko **`agent rot`** (degradacja kodu przez AI) zazwyczaj paraliżuje rozwój po 2–3 tygodniach.
 
-Zamiast kolejnego szablonu z gotowym frameworkiem (Next.js + Prisma) dostajesz **deterministyczną uprząż inżynierską**: 5 mechanicznych warstw kontroli, które fizycznie uniemożliwiają agentom zgadywanie wymagań, mockowanie testów i maskowanie błędów produkcyjnych.
+Zamiast kolejnego szablonu z gotowym frameworkiem (Next.js + Prisma) dostajesz **deterministyczną uprząż inżynierską**: bramki z kodem wyjścia, hash-pinem i własnym samotestem.
+
+**Uczciwa skala (zmierzona, nie deklarowana):** 7 bramek blokujących (`gate-lock`, Inception, Preflight, Epistemic, Decision, Adversarial, selftest) + 2 reguły procesu (7.19 myśl-przed-kodem, 7.20 budżet/anty-pętla). Nie „fizycznie uniemożliwiają” — **podnoszą cenę kłamstwa i obejścia**. Pozostałe reguły to umowa społeczna, której pilnuje review człowieka.
+Pełny stan: `docs/architecture/GATE-FIXES.md`. Dowód: `bash scripts/selftest.sh` → 46/46.
+
+---
+
+## 🛻 Profil: Hilux czy Full (domyślnie Hilux)
+
+Uprząż ma dwa tryby — **nie musisz włączać wszystkiego**. Wybór jest w pliku `hhh.profile`:
+
+| | **hilux** (domyślnie) | **full** |
+|---|---|---|
+| Kroki w pętli | 7 | 9 |
+| Punkty decyzyjne (podpisy człowieka) | **2** (`scope`, `accept`) | 3 (+`approach`) |
+| Bramki w pętli | 3 (preflight, skan diffu, dowody) | 6 |
+| Pre-commit (zmierzone) | **~140 ms** — pomija Inception i dowody | ~200 ms |
+| Dla kogo | 1–5 osób, monorepo bez RLS, chcesz dowozić | multi-tenant/GovTech, długa historia regresji |
+
+```bash
+echo "profile=hilux" > hhh.profile   # domyślnie i tak tyle jest
+```
+
+**Zasada Hiluxa:** bramka, która w tygodniu daje > 5% fałszywych alarmów, **wypada** — nie jest „dostrajana”. Więcej bramek ≠ większa kontrola; to Ferrari, które stoi w serwisie.
 
 ---
 
@@ -80,7 +103,10 @@ Uprząż została wyjęta bezpośrednio z żywego projektu produkcyjnego **[City
 | **2** | **ub-mode** | `AGENTS.md` (Reguła 7.17) + `scripts/ub-metrics.sh` | Wymusza *Subtract Before You Add* (wycięcie martwego kodu przed dodaniem nowego), *Attack the Premise*, *Null-Return Check* oraz raport złożoności cyklomatycznej (`crapper`) i duplikacji (`dryer`). |
 | **3** | **Adversarial Review** | `scripts/adversarial-review.sh` | Bezwzględny skaner `git diff origin/main...HEAD` wykrywający 7 grzechów głównych kodu bez użycia LLM (czysty, deterministyczny ripgrep/bash). |
 | **4** | **Visual Regression** | `e2e/visual-regression.spec.ts` | Testy Playwright na ekranach `1440x900` oraz `1024x768` (13-calowe laptopy) z wyłączonymi animacjami — chroni formularze przed zgnieceniem przez nawigację boczną. |
-| **5** | **Gate Integrity** | `scripts/check-gate-integrity.sh` | Pilnuje nienaruszalności uprzęży: sprawdza liczbę aktywnych reguł, blokuje flagi `--no-verify`, `skip-ci` oraz próby usuwania skryptów sprawdzających. |
+| **5** | **Gate Integrity** | `scripts/gate-lock.sh` + `check-gate-integrity.sh` | Integralność **hash-pin** (`harness.lock`) + **zbiór** ID reguł. Podmiana bramki na `exit 0`, usunięcie bramki Inception i 18 pustych zaślepek zamiast reguł są wykrywane. |
+| **6** | **Preflight (7.19)** | `scripts/preflight-gate.py` | Agent nie napisze linijki kodu bez artefaktu: **cytat z każdego dotykanego pliku** (dowód lektury), plan zaczynający się od `subtract`/`diagnose`, jawna sekcja Subtract, blokada duplikacji symboli oraz budżet ≤15 plików / ≤400 LOC. |
+| **7** | **Epistemic (7.20)** | `scripts/epistemic-gate.py` | Każde twierdzenie ma `cmd` + `expected` + `observed`; `confidence: high` wymaga **wykonanego** dowodu (`--execute`); blokada dowodów autorskich (`echo`), maskowania (`\|\| true`) i komend spoza allowlisty; hipoteza bez falsyfikatora = FAIL. |
+| **8** | **Decision (7.21)** | `scripts/decision-gate.py` + `scripts/hhh-run.py` | Agent **zatrzymuje się** przed każdym krokiem decyzyjnym (`scope` → `approach` → `accept`) i musi mieć decyzję podpisaną przez człowieka: ≥2 opcje z ceną, `must_not`, obserwowalne `done_when`, fraza `Potwierdzam:`. **Zakaz samo-akceptacji (D7)**: agent nie podpisze własnej decyzji. Orkiestrator zwraca exit 3 = STOP dla człowieka. |
 
 ---
 
@@ -95,14 +121,27 @@ bash install.sh
 
 ### Sposób 2: Instalacja w istniejącym repozytorium
 ```bash
-# 1. Pobierz pliki uprzęży
-curl -sSL https://raw.githubusercontent.com/XMadMaro/headless-horseman-harness/main/install.sh | bash
+# 1. Skopiuj pliki uprzęży (install.sh NIE pobiera nic z sieci — instaluje hooki w checkoucie)
+npx degit XMadMaro/headless-horseman-harness/. ./_harness && cp -r ./_harness/. . && rm -rf ./_harness
 
-# 2. Uruchom weryfikację lokalną
-bash scripts/check-gate-integrity.sh
-bash scripts/adversarial-review.sh origin/main
-python3 scripts/docs-provenance.py --check
+# 2. Zainstaluj hooki (pre-commit: integralność + Inception + Preflight; pre-push: skaner + dowody)
+bash install.sh
+
+# 3. Weryfikacja: każda bramka musi przejść I zablokować to, co ma blokować
+bash scripts/selftest.sh                 # 26 asercji, oczekiwane: 26/26
+bash scripts/gate-lock.sh --check        # integralność bramek (hash-pin)
+bash scripts/adversarial-review.sh origin/main     # skan grzechów (tylko linie dodawane)
+python3 scripts/docs-provenance.py --check         # wywiad + WIP=1
+python3 scripts/preflight-gate.py --ticket CP-XXX  # myśl i posprzątaj przed kodem
+python3 scripts/epistemic-gate.py --ticket CP-XXX --execute  # dowody wykonane
+
+# 4. Prowadzenie krok po kroku (zatrzymuje się na decyzjach człowieka)
+python3 scripts/hhh-run.py --ticket CP-XXX --status   # plan kroków
+python3 scripts/hhh-run.py --ticket CP-XXX --run      # 0=zamknięte, 1=robota agenta, 3=STOP: decyzja człowieka
+python3 scripts/decision-gate.py --ask --ticket CP-XXX --step scope   # grill w terminalu
 ```
+
+> Włączanie bram opcjonalnych jest jawne: Preflight działa, gdy istnieje katalog `docs/preflight/`, Epistemic — gdy `docs/epistemic/`. To celowe: brak tarcia przy adopcji, ale też brak cichego „pominięto”.
 
 ---
 
@@ -162,12 +201,24 @@ headless-horseman-harness/
 ├── docs/tasks/
 │   ├── TEMPLATE.md           # Szablon zadania z sekcjami Inception Gate i Subtract
 │   └── ACTIVE.md             # Rejestr WIP=1 i protokół Zero Próżni (Reguła 2.9)
+├── harness.lock              # Hash-pin bramek (integralność, nie licznik nagłówków)
 ├── scripts/
-│   ├── adversarial-review.sh # Deterministyczny skaner 7 grzechów głównych
-│   ├── check-gate-integrity.sh # Weryfikacja nienaruszalności uprzęży
-│   ├── docs-provenance.py    # Zero-dependency Inception Gate checker
+│   ├── adversarial-review.sh # Skaner grzechów: tylko linie dodawane, prawdziwe plik:linia
+│   ├── check-gate-integrity.sh # Weryfikacja nienaruszalności uprzęży (woła gate-lock)
+│   ├── gate-lock.sh          # Generowanie/weryfikacja harness.lock (sha256 + zbiór reguł)
+│   ├── docs-provenance.py    # Inception Gate: wywiad + WIP=1 (fail-closed)
+│   ├── preflight-gate.py     # 7.19: dive/subtract/duplikacja/budżet przed kodem
+│   ├── epistemic-gate.py     # 7.20: dowody wykonywalne (E1-E10)
+│   ├── decision-gate.py      # 7.21: punkty decyzyjne, zakaz samo-akceptacji (D1-D10)
+│   ├── hhh-run.py            # orkiestrator: bramki krok po kroku, STOP na decyzji
+│   ├── selftest.sh           # Macierz PASS/FAIL wszystkich bramek (46 asercji)
+│   ├── install-hooks.sh      # Hooki git z backupem cudzych
 │   ├── ub-metrics.sh         # Pomiary złożoności cyklomatycznej i duplikacji
-│   └── config.sh             # Konfiguracja ścieżek i flag monorepo
+│   └── config.sh             # Przykładowe wartości ścieżek (NIE panel konfiguracji)
+├── docs/preflight/           # Artefakty 7.19 (schemat + wzorce: uczciwy / frankenstein)
+├── docs/epistemic/           # Artefakty 7.20 (schemat + wzorce: uczciwy / gra w bramkę)
+├── docs/decisions/           # Artefakty 7.21 (schemat + wzorce: podpisana / samo-akceptacja)
+├── docs/architecture/        # Platforma monorepo, wymuszanie krytycyzmu, status napraw
 ├── skills/                   # Skille inżynierskie
 │   ├── grill-me/             # Protokół wywiadu przed przystąpieniem do kodu
 │   ├── ub-mode/              # Reguły inżynierskie Uncle Boba

@@ -1,0 +1,20 @@
+# harness.lock — wygenerowany przez scripts/gate-lock.sh. NIE edytuj ręcznie.
+# Zmiana wymaga review (CODEOWNERS na scripts/** i AGENTS.md).
+format=1
+rules=7.1 7.2 7.3 7.4 7.5 7.6 7.7 7.8 7.9 7.10 7.11 7.12 7.13 7.14 7.15 7.16 7.17 7.18 7.19 7.20 7.21
+sha256 9915f49b96f455bd25028cd652aa55ce2d3ff3fd9057af591679d2978fc82658  AGENTS.md
+sha256 63eb78a6718012be1e5e4542ec032464b2894a02af0c3761eac2fa7495876618  skills/ROUTING.md
+sha256 4471130ecefd519f05f5b342c993f46ae3dddf78b3201c9f9aa2e730a9079e5a  scripts/adversarial-review.sh
+sha256 0c6db8fe1d04f585b9b6a64a8264df4da496e4c37d36273dabbd5d4b97e01680  scripts/docs-provenance.py
+sha256 77b8f56363d9ee1a1456176768b84d774cba8a2374a7617988409cdc6b00921d  scripts/check-gate-integrity.sh
+sha256 580a8e2734fa11222c9ab696f3692172145f7369b361f769280b493daaf9b2f0  scripts/preflight-gate.py
+sha256 db4a34a20b89a64f86070e0cb75a3162e4abb52f1b23bffff0b8ad9ca35d84e3  scripts/epistemic-gate.py
+sha256 390fc22cf75d4407013b791478989b8609ae5f1859f31e6e10f55cf4e02c051f  scripts/gate-lock.sh
+sha256 b718a6b09db97e76327b3d008103a4254a3d18cfffdf397cb180e7f95f643630  scripts/install-hooks.sh
+sha256 0593fb646fe349938ee5ea6bdcd5d2e5dc06c0c0d089c01d1b8f03c8bd2dd3dc  scripts/selftest.sh
+sha256 dd3ca6fa36c10ad3a9202f5bd81cd3531395e1c0ff02b43cebde57d98a8c6ceb  scripts/decision-gate.py
+sha256 cf427fe1cbce4c0d33e6b57bac41458656e928cc8ec18576c123b55d44ee1470  scripts/hhh-run.py
+sha256 7803bb5ffe247218fbe4a2c700173405ec4f00e28b65923d2bb48a6f07bddbed  install.sh
+sha256 104096e8c5651bb9ee53b6dbd172eb033f115fd00f4e64c5916a227b5e42b397  .adversarial-allow
+sha256 831bd035efb1db624e2f3d797b85004b03bdf5af318b55f6816bd37585f9eaa1  tests/fixtures/negative/test.tsx
+sha256 3894a2e157f40fa13c2ee60b9cb09e02ba73cadb64e3ff3d6a0b73983d325903  tests/fixtures/negative/0099_test.sql

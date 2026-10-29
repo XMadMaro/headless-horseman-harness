@@ -1,0 +1,115 @@
+name: HHH Gates
+on: [pull_request]
+
+env:
+  BASE: origin/${{ github.base_ref }}
+
+jobs:
+  integrity:
+    name: Integralność bramek (hash-pin)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: harness.lock zgodny
+        run: bash scripts/gate-lock.sh --check
+      - name: Kontrola spójności uprzęży
+        run: bash scripts/check-gate-integrity.sh
+
+  provenance:
+    name: Inception Gate (wywiad przed kodem)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Wywiad + WIP=1
+        if: hashFiles('docs/tasks/ACTIVE.md') != ''
+        run: python3 scripts/docs-provenance.py --check
+      - name: Dowód RED bramki (musi blokować)
+        run: python3 scripts/docs-provenance.py --test-red
+
+  preflight:
+    name: Preflight (myśl i posprzątaj przed kodem)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Artefakty preflight zmienione w PR
+        if: hashFiles('docs/preflight/*.json') != ''
+        run: |
+          set -euo pipefail
+          changed=$(git diff --name-only "$BASE"...HEAD -- 'docs/preflight/*.json' | grep -v '\.gaming\.json$' || true)
+          if [ -z "$changed" ]; then echo "brak zmienionych artefaktów preflight"; exit 0; fi
+          for f in $changed; do
+            echo "== $f"
+            python3 scripts/preflight-gate.py --file "$f"
+          done
+
+  epistemic:
+    name: Epistemic Gate (dowody wykonywalne)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      # --execute JEST OBOWIĄZKOWY: tryb statyczny przepuszcza kłamstwo spójne wewnętrznie.
+      - name: Artefakty epistemiczne zmienione w PR
+        if: hashFiles('docs/epistemic/*.json') != ''
+        run: |
+          set -euo pipefail
+          changed=$(git diff --name-only "$BASE"...HEAD -- 'docs/epistemic/*.json' | grep -v '\.gaming\.json$' || true)
+          if [ -z "$changed" ]; then echo "brak zmienionych artefaktów epistemicznych"; exit 0; fi
+          for f in $changed; do
+            echo "== $f"
+            python3 scripts/epistemic-gate.py --file "$f" --execute
+          done
+
+  decisions:
+    name: Punkty decyzyjne (zakaz samo-akceptacji)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Każda decyzja podpisana przez człowieka
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          found=0
+          for d in docs/decisions/*/; do
+            ticket="$(basename "$d")"
+            case "$ticket" in *.gaming) continue ;; esac
+            for f in "$d"*.json; do
+              step="$(basename "$f" .json)"
+              echo "== $ticket/$step"
+              python3 scripts/decision-gate.py --verify --ticket "$ticket" --step "$step"
+              found=1
+            done
+          done
+          [ "$found" -eq 1 ] || echo "brak decyzji w repo — nic do sprawdzenia"
+      - name: Lista wymaganych decyzji dla aktywnego biletu
+        run: python3 scripts/decision-gate.py --list --ticket CP-150
+
+  selftest:
+    name: Samotest uprzęży (macierz bramek)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Macierz PASS/FAIL wszystkich bramek
+        run: bash scripts/selftest.sh
