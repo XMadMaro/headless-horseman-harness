@@ -1,3 +1,4 @@
+<img width="2020" height="1228" alt="HHH" src="https://github.com/user-attachments/assets/5306b6c3-e2a4-4fd9-a5f7-90a0ca766686" />
 # heavy-starter — Deterministyczny Harness dla Monorepo
 
 > **Nie przyspiesza pisania kodu. Kasuje 90% czasu refaktoru.**
