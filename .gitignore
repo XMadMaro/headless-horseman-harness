@@ -1,0 +1,8 @@
+.metrics/
+__pycache__/
+*.pyc
+node_modules/
+.venv/
+.env
+.env.local
+.DS_Store

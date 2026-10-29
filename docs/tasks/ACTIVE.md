@@ -1,0 +1,10 @@
+# ACTIVE.md — Rejestr zadań (Zero Próżni 2.9)
+
+> Jeden wiersz = jedno zadanie. Statusy: DRAFT | IN_PROGRESS | REVIEW | DONE. Max 1 IN_PROGRESS na STANDARD_TRACK.
+
+| ID | Tytuł | Status | Track | Właściciel |
+|---|---|---|---|---|
+| CP-001 | Przykład: dodanie endpointu /health | DRAFT | STANDARD_TRACK | @you |
+| CP-002 | Przykład docs-only: aktualizacja README | DRAFT | FAST_TRACK | @you |
+
+> Po zamknięciu zadania natychmiast wpisz kandydata z `backlog.md`. Pusty plik = naruszenie 2.9.

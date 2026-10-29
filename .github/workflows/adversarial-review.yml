@@ -1,0 +1,12 @@
+name: Adversarial Review
+on: [pull_request]
+jobs:
+  adversarial:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Run adversarial review
+        run: bash harness-template/scripts/adversarial-review.sh origin/main
+      - name: Negative test (must block)
+        run: bash harness-template/scripts/adversarial-review.sh --test-negative || echo "✅ negative test correctly blocked"
