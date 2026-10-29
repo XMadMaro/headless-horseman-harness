@@ -3,7 +3,7 @@
 [Polski](README.md) · **English**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Self-test](https://img.shields.io/badge/selftest-50%2F50%20PASS-success)](#verify-it-yourself-60-seconds)
+[![Self-test](https://img.shields.io/badge/selftest-52%2F52%20PASS-success)](#verify-it-yourself-60-seconds)
 [![Zero LLM Gates](https://img.shields.io/badge/Gates-Deterministic%20(Zero%20LLM)-orange)](#the-8-gates)
 
 > **An engineering harness for AI coding agents in large monorepos.**
@@ -106,7 +106,7 @@ bash install.sh
 cp docs/ci/gates.yml docs/ci/adversarial-review.yml .github/workflows/
 
 # 3. Verify: every gate must pass AND block what it should
-bash scripts/selftest.sh                      # expected: 50/50
+bash scripts/selftest.sh                      # expected: 52/52
 bash scripts/gate-lock.sh --check             # integrity of gates
 bash scripts/adversarial-review.sh origin/main
 python3 scripts/docs-provenance.py --check
@@ -183,7 +183,7 @@ Note: the two shipped acceptance tests are examples (lock intact, fixtures still
 ## Verify it yourself (60 seconds)
 
 ```bash
-bash scripts/selftest.sh          # 50 assertions: every gate passes and blocks
+bash scripts/selftest.sh          # 52 assertions: every gate passes and blocks
 ```
 
 The self-test includes deliberate sabotage: a scanner replaced with `exit 0`, a deleted gate, 18 placeholder rules, a self-approved decision, a proof written with `echo`, a lying artifact that is internally consistent (it passes static mode and fails under `--execute` — that limitation is a test case, not a bug).
@@ -198,7 +198,7 @@ This repo was audited against six critical-thinking standards before the current
 - [`docs/architecture/GATE-FIXES.md`](docs/architecture/GATE-FIXES.md) — what was fixed, what is proven, what remains open (Polish)
 - [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) — what the harness will never do
 
-**What is still open:** all 50 assertions are synthetic (my fixtures, my repo). They prove the gates behave as specified — not that they help in a real monorepo. The honest next step is 2 weeks, 5 tickets, one real agent — and then deleting whichever gate produced false alarms.
+**What is still open:** all 52 assertions are synthetic (my fixtures, my repo). They prove the gates behave as specified — not that they help in a real monorepo. The honest next step is 2 weeks, 5 tickets, one real agent — and then deleting whichever gate produced false alarms.
 
 ---
 
@@ -218,7 +218,7 @@ headless-horseman-harness/
 │   ├── hhh-run.py            # step orchestrator with STOP semantics
 │   ├── gate-lock.sh          # integrity (hash pin + rule set)
 │   ├── docs-provenance.py    # Inception Gate + WIP=1
-│   ├── selftest.sh           # 50-assertion matrix of all gates
+│   ├── selftest.sh           # 52-assertion matrix of all gates
 │   ├── install-hooks.sh      # hooks, backs up foreign hooks
 │   └── ub-metrics.sh         # complexity/duplication report (report-only)
 ├── docs/

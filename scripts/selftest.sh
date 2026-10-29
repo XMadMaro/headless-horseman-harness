@@ -229,10 +229,14 @@ echo "═══ 9. Testy akceptacyjne (poza zasięgiem agenta) ═══"
 # Tu sprawdzamy, że mechanizm realnie tego broni — i że sam test umie zawieść.
 ACC="$(mktemp -d)"; cp -r . "$ACC/repo" 2>/dev/null
 expect "testy akceptacyjne przechodzą na czystym repo" 0 bash -c "cd '$ACC/repo' && python3 scripts/acceptance-gate.py --run"
+expect "brudny working tree (śmieci + zmiany) nie blokuje" 0 bash -c "cd '$ACC/repo' && echo junk > brud.txt && printf '\n<!-- x -->\n' >> README.md && python3 scripts/acceptance-gate.py --run"
 (
   cd "$ACC/repo" || exit 1
   echo 'exit 0' >> hidden/acceptance/01_lock_intact.sh
 )
+ACC2="$(mktemp -d)"; cp -r . "$ACC2/repo" 2>/dev/null; rm -rf "$ACC2/repo/.git"
+expect "repo bez gita => bramka działa (nie zależy od git)" 0 bash -c "cd '$ACC2/repo' && python3 scripts/acceptance-gate.py --run"
+rm -rf "$ACC2"
 expect "agent dopisał linię do testu => STOP (tamper)" 3 bash -c "cd '$ACC/repo' && python3 scripts/acceptance-gate.py --run"
 (
   cd "$ACC/repo" || exit 1

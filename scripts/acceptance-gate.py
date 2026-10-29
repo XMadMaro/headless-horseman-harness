@@ -21,6 +21,17 @@ ZASADA
          i wynik. Agent dostaje "test X nie przeszedł", nie oracle.
          Ujawnienie szczegółów jest decyzją człowieka: --verbose.
 
+CZEGO BRAMKA *NIE* WYMAGA (zmierzone w selftest, nie założone)
+    * czystego working tree — testy idą na plikach roboczych, czyli dokładnie na tym,
+      co agent właśnie zmienił (także przed commitem); śmieci i niezacommitowane
+      zmiany w produkcie nie mają znaczenia,
+    * gita — bez katalogu .git bramka działa tak samo (tylko hashe i bash),
+    * bezgrzesznego repo — dług w kodzie produktu nie blokuje bramki.
+    Wymagane jest JEDNO: bajty testów (i manifestu) muszą być nietknięte.
+    Uwaga na sprzężenie: jeśli zmienisz plik bramki objęty harness.lock, test
+    "lock-intact" padnie do momentu `bash scripts/gate-lock.sh --update` — to nie
+    brud w repo, to lock, który pilnuje własnej integralności.
+
 KODY WYJŚCIA
     0  wszystkie testy przeszły
     1  co najmniej jeden test nie przeszedł (robota dla agenta)
