@@ -57,7 +57,7 @@ echo "profile=hilux" > hhh.profile   # domyślnie i tak tyle jest
 
 ## 🏆 Battle-Tested Evidence: Case Study CityPulse
 
-Uprząż została wyjęta bezpośrednio z żywego projektu produkcyjnego **[CityPulse](https://github.com/XMadMaro/CityPulseV2)** (Gov-Tech monorepo, 30k+ LOC, obsługa gmin i urzędów):
+Uprząż została wyjęta bezpośrednio z żywego projektu produkcyjnego **[CityPulse](https://github.com/XMadMaro/CityPulseV2)** (Gov-Tech monorepo, 127k+ LOC, 880+ plików TypeScript, 6 projektów w monorepo Nx, 150+ zrealizowanych zadań w ścisłym cyklu TDD, obsługa gmin i urzędów):
 
 | Metryka | Przed uprzężą (CP-142) | Po wdrożeniu HHH (CP-145) | Zmiana |
 |---|---|---|---|
