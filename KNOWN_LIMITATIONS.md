@@ -9,4 +9,16 @@
 4. **Context Exhaustion:** Wpinanie wszystkich skilli na raz rozwala okno kontekstu. Mitigacja: modularne ładowanie — tylko `grill-me` na starcie, tylko `code-review` na końcu.
 5. **Fałszywe poczucie bezpieczeństwa:** Zielone bramki ≠ dobry produkt. Mitigacja: `AGENTS.md 7.11` — CLI zbiera dowody, człowiek podpisuje `DONE`.
 
+6. **Bramki łapią lenistwo, nie wrogość (zmierzone 2026-10-30).** Przy założeniu, że agent jest
+   *aktywnym przeciwnikiem*, dwie bramki padają trywialnie:
+   - `decision-gate.py`: `confirmed_by` to **string, nie tożsamość**. Komunikat błędu D8 sam podaje
+     dokładną frazę potwierdzenia; przepisanie jej zajmuje agentowi jedną iterację, a bramka
+     kończy z `PASSED: decyzja podpisana (Marek (human))` — czyli podpis jest do podrobienia.
+   - `gate-lock.sh`: `--update` jest w zasięgu agenta. Zmiana pliku bramki + `--update` daje
+     `--check` = 0 i `check-gate-integrity` = 0, a backdoor w bramce staje się niewidoczny.
+   - `hidden/`: ukryte **przez zapomnienie, nie przez brak dostępu** — agent czyta cały system plików.
+   - `.hhh/events.jsonl`, `.git/hooks/*`, `--no-verify`: wszystko w zasięgu agenta.
+   **Wniosek:** to tripwire na pośpiech, nie kontrola bezpieczeństwa. Integralność musi być
+   weryfikowana **poza agentem** (CI względem `main`, podpisy GPG/SSH, log append-only, least privilege).
+
 Harness gwarantuje **higienę wykonania, nie słuszność kierunku**.
