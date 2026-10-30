@@ -195,7 +195,7 @@ HHH jest natywnie dostosowany do wiodących asystentów programistycznych:
 Plik `AGENTS.md` oraz katalog `skills/` są automatycznie wykrywane. Claude traktuje `AGENTS.md` jako nadrzędną instrukcję systemową repozytorium.
 
 ### 2. Antigravity IDE / CLI
-Uprząż posiada wbudowany podział ról wg Reguły 7.5:
+Uprząż posiada wbudowany podział ról wg Reguły 7.11:
 - **Antigravity IDE (`BUILDER`)** implementuje kod i testy.
 - **Antigravity CLI (`GATEKEEPER`)** wykonuje automatyczną Receptę Weryfikacji Manualnej (Reguła 7.11) i przygotowuje surowy stdout dla człowieka.
 
@@ -211,7 +211,7 @@ ln -s AGENTS.md .cursorrules
 
 ```
 headless-horseman-harness/
-├── AGENTS.md                 # System operacyjny agenta (Reguły 7.1 - 7.21)
+├── AGENTS.md                 # System operacyjny agenta (8 reguł: 7.4-7.21)
 ├── KNOWN_LIMITATIONS.md      # Co uprząż rozwiązuje, a czego NIE zastąpi
 ├── README.md                 # Główna dokumentacja projektu
 ├── install.sh                # Skrypt instalacyjny hooków gita

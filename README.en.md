@@ -206,7 +206,7 @@ This repo was audited against six critical-thinking standards before the current
 
 ```text
 headless-horseman-harness/
-├── AGENTS.md                 # agent operating rules (7.1 - 7.21), Polish
+├── AGENTS.md                 # agent operating rules (8 rules: 7.4-7.21), Polish
 ├── hhh.profile               # hilux (default) | full
 ├── harness.lock              # sha256 pin of every gate file
 ├── install.sh                # installs git hooks (no network)

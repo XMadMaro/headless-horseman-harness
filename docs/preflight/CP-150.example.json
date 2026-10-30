@@ -18,8 +18,8 @@
     },
     {
       "path": "AGENTS.md",
-      "line": 57,
-      "quote": "Subtract Before You Add:** w każdym CP sekcja",
+      "line": 29,
+      "quote": "Subtract Before You Add:** sekcja `Co usuwamy` przed `Co dodajemy`",
       "why": "reguła, którą obecna implementacja łamała (karała usuwanie)"
     }
   ],
@@ -30,8 +30,18 @@
       "action": "replace"
     }
   ],
-  "plan": ["subtract", "diagnose", "design", "test", "implement", "verify"],
-  "budget": { "max_files": 2, "max_loc": 180 },
+  "plan": [
+    "subtract",
+    "diagnose",
+    "design",
+    "test",
+    "implement",
+    "verify"
+  ],
+  "budget": {
+    "max_files": 2,
+    "max_loc": 180
+  },
   "reuse": [
     {
       "new": "has_secret",

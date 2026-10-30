@@ -209,7 +209,7 @@ import pathlib
 pathlib.Path("AGENTS.md").write_text("\n".join(f"## 7.{i}. placeholder" for i in range(1, 21)) + "\n")
 PY
 )
-expect "18 pustych zaślepek zamiast reguł => FAIL" 1 bash -c "cd '$SAB/repo' && bash scripts/check-gate-integrity.sh"
+expect "puste zaślepki zamiast reguł => FAIL" 1 bash -c "cd '$SAB/repo' && bash scripts/check-gate-integrity.sh"
 rm -rf "$SAB"
 
 # Obejście hooka: commit kodu bez artefaktu preflight, gdy bramka już istniała

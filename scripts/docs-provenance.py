@@ -7,7 +7,7 @@ Poprawki po audycie:
   * P0-2: parsuje UDOKUMENTOWANY format tabeli ACTIVE.md (| ID | Tytuł | Status | ...),
           a nie tylko wymyślony (| ID | STATUS |)
   * P1-1: akceptuje numerowane nagłówki (## 2. Decyzje z wywiadu ...), czyli własny szablon repo
-  * WIP=1: egzekwuje maksymalnie jedno zadanie IN_PROGRESS (Reguła 7.1 / 2.9)
+  * WIP=1: egzekwuje maksymalnie jedno zadanie IN_PROGRESS (Reguła 7.11 / 2.9)
   * Fail-closed: brak ACTIVE.md przy oczekiwanym STANDARD_TRACK => błąd, nie ciche PASS
 
 Zasada: bramka nie ocenia PRAWDY wywiadu (to robi człowiek), ocenia jego OBECNOŚĆ i strukturę.
@@ -140,7 +140,7 @@ def main() -> int:
 
     if len(in_progress) > 1 and not args.allow_multi_wip:
         print(f"\n🚩 WIP=1 NARUSZONE: {len(in_progress)} zadań IN_PROGRESS ({', '.join(in_progress)})")
-        print("   Reguła 7.1 / 2.9: maksymalnie jedno zadanie STANDARD_TRACK w toku.")
+        print("   Reguła 7.11 / 2.9: maksymalnie jedno zadanie STANDARD_TRACK w toku.")
         failed.append("WIP>1")
 
     if failed:

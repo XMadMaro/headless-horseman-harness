@@ -1,17 +1,17 @@
 # harness.lock — wygenerowany przez scripts/gate-lock.sh. NIE edytuj ręcznie.
 # Zmiana wymaga review (CODEOWNERS na scripts/** i AGENTS.md).
 format=1
-rules=7.1 7.2 7.3 7.4 7.5 7.6 7.7 7.8 7.9 7.10 7.11 7.12 7.13 7.14 7.15 7.16 7.17 7.18 7.19 7.20 7.21
-sha256 6b54fdc525464d7a4b2c8025f5251ecd4cc506a8d4f339b3c7b993c6c380ff20  AGENTS.md
+rules=7.4 7.9 7.11 7.17 7.18 7.19 7.20 7.21
+sha256 91012240c7d110408dca39650ff52e6ed598410b805bcb2f2552f96e10020209  AGENTS.md
 sha256 63eb78a6718012be1e5e4542ec032464b2894a02af0c3761eac2fa7495876618  skills/ROUTING.md
-sha256 4471130ecefd519f05f5b342c993f46ae3dddf78b3201c9f9aa2e730a9079e5a  scripts/adversarial-review.sh
-sha256 0c6db8fe1d04f585b9b6a64a8264df4da496e4c37d36273dabbd5d4b97e01680  scripts/docs-provenance.py
+sha256 0ddd2f49cef43d47a754297f84d947c880370b33a338a3c814e7cdebd8238846  scripts/adversarial-review.sh
+sha256 5daf238e6bce1d90800e51cf7e6a16e19bd33ec15dee8f36ed8a8fa8bf1930eb  scripts/docs-provenance.py
 sha256 77b8f56363d9ee1a1456176768b84d774cba8a2374a7617988409cdc6b00921d  scripts/check-gate-integrity.sh
 sha256 580a8e2734fa11222c9ab696f3692172145f7369b361f769280b493daaf9b2f0  scripts/preflight-gate.py
 sha256 db4a34a20b89a64f86070e0cb75a3162e4abb52f1b23bffff0b8ad9ca35d84e3  scripts/epistemic-gate.py
-sha256 a05da6b9ed7a85741718ccf51c55a4c5e28ba3508456fc8a6627b65d1af9a47f  scripts/gate-lock.sh
+sha256 3d5ab3b07922fe0a6f84b459bbd37bf26718d81f09436dd9a08487924620ba91  scripts/gate-lock.sh
 sha256 5c6d9061d75410fb1eff64fd3c78226c343a3bd27729739146a65efa7ac4b07d  scripts/install-hooks.sh
-sha256 819e51f812878c201e0665e503598038b10355c98078e609c8b2c69f2f41643c  scripts/selftest.sh
+sha256 48740661f68069a3199d04681cf33f134144c25e63becad3e17f5b7df48e7c01  scripts/selftest.sh
 sha256 dd3ca6fa36c10ad3a9202f5bd81cd3531395e1c0ff02b43cebde57d98a8c6ceb  scripts/decision-gate.py
 sha256 cf427fe1cbce4c0d33e6b57bac41458656e928cc8ec18576c123b55d44ee1470  scripts/hhh-run.py
 sha256 7803bb5ffe247218fbe4a2c700173405ec4f00e28b65923d2bb48a6f07bddbed  install.sh

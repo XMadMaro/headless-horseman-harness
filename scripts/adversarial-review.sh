@@ -272,12 +272,12 @@ else
     desc="$snip"
     case "$rl" in
       S1) desc="Silent fallback ukrywa błąd (7.9) :: $snip" ;;
-      S2) desc="!important niszczy kaskadę (7.10) :: $snip" ;;
-      S3) desc="Asercja pozorna, przejdzie dla pustego obiektu (7.2) :: $snip" ;;
+      S2) desc="!important niszczy kaskadę (7.4) :: $snip" ;;
+      S3) desc="Asercja pozorna, przejdzie dla pustego obiektu (7.9) :: $snip" ;;
       S4) desc="Prawdopodobny sekret w kodzie :: $snip" ;;
       S5) desc="DROP bez -- APPROVED_DESTRUCTIVE (7.18) :: $snip" ;;
       S6) desc="Nowa zależność bez uzasadnienia w CP :: $snip" ;;
-      S7) desc="Tenant z niezaufanego payloadu (7.10) :: $snip" ;;
+      S7) desc="Tenant z niezaufanego payloadu (7.4) :: $snip" ;;
     esac
     printf "| %-8s | %-9s | %-34s | %s\n" "$lvl" "$rl" "$loc" "$desc"
   done <<< "$ROWS"

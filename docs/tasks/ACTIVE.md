@@ -4,6 +4,7 @@
 
 | ID | Tytuł | Status | Track | Właściciel |
 |---|---|---|---|---|
+| CP-102 | Reguły 21 -> 8: mniejsza powierzchnia, ta sama treść | DRAFT | STANDARD_TRACK | @you |
 | CP-101 | Ukryte testy akceptacyjne: dowód odporności na brudny tree | DRAFT | STANDARD_TRACK | @you |
 | CP-001 | Przykład: dodanie endpointu /health | DRAFT | STANDARD_TRACK | @you |
 | CP-002 | Przykład docs-only: aktualizacja README | DRAFT | FAST_TRACK | @you |

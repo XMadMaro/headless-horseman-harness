@@ -1,67 +1,39 @@
 # AGENTS.md — System Operacyjny Agenta (Monorepo Heavy Starter)
 
 > Ten plik jest źródłem prawdy dla agenta. `AGENTS.md` > prompt człowieka > pamięć modelu.
-> Zmiany TREŚCI bramek wykrywa `scripts/gate-lock.sh --check` (hash-pin). Naruszenia PROCESU wykrywają bramki 7.18–7.20.
+> Zmiany TREŚCI bramek wykrywa `scripts/gate-lock.sh --check` (hash-pin). Naruszenia PROCESU wykrywają bramki 7.19–7.21.
 >
 > **Precedencja:** prawda repozytorium > bramki deterministyczne > governance > workflow > specjalista stacku > preferencje człowieka.
 > **Żaden skill nie unieważnia bramki.** Jeśli skill każe pominąć test, a bramka go wymaga — wygrywa bramka.
 
 ---
 
-## 7.1 Protokół Flagi (SystemFlags)
-Jeden stan zadania w `docs/tasks/ACTIVE.md`: `DRAFT | IN_PROGRESS | REVIEW | DONE`. Zakaz ręcznej zmiany statusu poza receptą.
-
-## 7.2 Dowód RED -> GREEN przeciw fałszywym testom
-Każdy bugfix musi mieć dowód: test który FAILuje przed zmianą i PASSuje po. Zakaz `toBeDefined()`/`assert True` solo (S3).
-
-## 7.3 Treść niezaufana
-Dane z API/DB/LLM są niezaufane. Waliduj na bramce.
-
 ## 7.4 Bariery techniczne > tekst
-`scripts/*` i `docs-provenance.py` mają pierwszeństwo przed obietnicą agenta "już naprawiłem".
-
-## 7.5 Rozdział ról
-BUILDER (agent IDE) kończy na `REVIEW`. GATEKEEPER (CLI) weryfikuje niezależnie. Człowiek podpisuje `DONE`.
-
-## 7.6 Statusy
-Agent max `REVIEW (LOCALLY_VERIFIED)`. `DONE` wyłącznie `Zatwierdzam: [data, CP-xxx, decyzja]` przez człowieka.
-
-## 7.7 Drzewo robocze i rejestry
-Nie ruszaj cudzych zmian w `git status`. `ACTIVE.md` nigdy nie pusta (Zero Próżni 2.9).
-
-## 7.8 Budżet kontekstu
-Używaj `xerj`/`codebase-memory` przed pisaniem kodu. Nie zgaduj struktury.
+`scripts/*` i bramki mają pierwszeństwo przed obietnicą agenta „już naprawiłem".
+Walidacja raz na granicy (Zod/Pydantic), wewnątrz czyste funkcje; przy błędzie zewnętrznym
+`fail-closed`, nie cichy `fallback`. Dane z API/DB/LLM są **niezaufane** — sprawdzaj na wejściu.
 
 ## 7.9 Twardy Kontrakt Anty-Placebo
-Zakaz `except: pass`, pustych `catch {}`, `?.` maskujących `undefined`, `as any`. Fix root cause, nie guard.
+Zakaz `except: pass`, pustych `catch {}`, `?.` maskujących `undefined`, `as any`.
+Bugfix bez testu, który **najpierw failuje**, nie jest bugfixem. Zakaz testów, które przejdą dla
+`null`/`undefined`/`[]`. Zakaz `page.route` udającego API w E2E. Komponent nie wysyła `""`/`null`
+jako danych, których nie ma w źródle (ghost context). Strażnik ukrywający crash to nie poprawka.
 
-## 7.10 Pojedyncza Brama i Fail-Closed
-Walidacja na wejściu (Zod/Pydantic), wewnątrz czyste funkcje. Przy błędzie zewnętrznym `Fail-Closed`, nie `fallback`.
-
-## 7.11 Bramka Weryfikacji (CLI wykonuje, Człowiek podpisuje)
-Antigravity CLI wykonuje Receptę (curl, DB, logi) i wkleja surowy `stdout`. Człowiek czyta i podpisuje 1 linią. Zakaz samozatwierdzania.
-
-## 7.12 Protokół Egzekwowania Pracy
-Bez planu `plik:linia` nie ma kodu. Plan w `CP-xxx.md` przed `IN_PROGRESS`.
-
-## 7.13 Stop Premature Execution (Action Bias Stop)
-Bezwzględny zakaz pisania kodu po otrzymaniu zadania bez `/grill-me`. Najpierw wywiad, potem `Subtract` plan.
-
-## 7.14 Zakaz Atrap w E2E
-Zakaz `page.route` udającego API w testach E2E. Test uderza w realny endpoint lub jest `skipped`.
-
-## 7.15 Inwariant Przepływu Danych w UI
-Zakaz pozornego kontekstu (ghost context): komponent nie wysyła `""`/`null` jako danych, jeśli nie ma ich w źródle.
-
-## 7.16 Pojedynczy Silnik
-Zakaz 2 równoległych silników (np. `ChatService` + `RAGService`). Przy wymianie usuń stary przed dodaniem nowego.
+## 7.11 Bramka Weryfikacji (CLI wykonuje, człowiek podpisuje)
+Jeden stan zadania w `docs/tasks/ACTIVE.md`: `DRAFT | IN_PROGRESS | REVIEW | DONE`; plik nigdy
+niepusty (Zero Próżni 2.9). BUILDER (agent) kończy na `REVIEW`, GATEKEEPER weryfikuje niezależnie,
+`DONE` podpisuje wyłącznie człowiek: `Zatwierdzam: [data, CP-xxx, decyzja]`. Zakaz samo-zatwierdzania.
+Bez planu `plik:linia` w CP nie ma kodu (7.19).
 
 ## 7.17 Dyscyplina ub-mode (Uncle Bob)
-- **Subtract Before You Add:** w każdym CP sekcja `Co usuwamy` przed `Co dodajemy`.
-- **Attack the Premise:** po 2. failu tej samej bramki STOP, spisz założenie w `Premise` i podważ je.
+- **Subtract Before You Add:** sekcja `Co usuwamy` przed `Co dodajemy`. Przy wymianie silnika usuń
+  stary **przed** dodaniem nowego. Pojedynczy silnik — zakaz dwóch równoległych.
+- **Attack the Premise:** po 2. failu tej samej bramki STOP, zapisz założenie w `Premise` i podważ je.
 - **Fix Root Causes:** nie maskuj crasha guardem.
-- **Null-Return Check:** test który przechodzi dla `null`/`undefined` do kosza.
+- **Null-Return Check:** test przechodzący dla `null`/`undefined` do kosza.
 - **Boundary Discipline:** walidacja raz na granicy, wewnątrz `trust`.
+- **Drzewo robocze:** nie ruszaj cudzych zmian w `git status`. Commity małe; każdy mówi: dlaczego,
+  co, jak udowodniono.
 - **TDD:** `crapper` CC < 10, `dryer` duplikacja < 0.82 (report-only do baseline).
 
 ## 7.18 Kognitywne Filtry, Smart Stage-Gating i Skille

@@ -1,6 +1,6 @@
 # Skill: grill-me — Inception Gate Protocol
 
-> Ładuj ten skill ZAWSZE przed planem. Zakaz pisania kodu bez wywiadu (Reguła 7.13).
+> Ładuj ten skill ZAWSZE przed planem. Zakaz pisania kodu bez wywiadu (Reguła 7.21).
 
 ## Kiedy
 - Nowy UX / nowa encja / niejednoznaczne wymagania / prompt użytkownika < 20 słów
@@ -19,4 +19,4 @@
 `python scripts/docs-provenance.py --check` musi dać `PASS`. Inaczej `IN_PROGRESS` zablokowane.
 
 ## Antywzorzec
-Agent który zgaduje `citySlug` z `props` zamiast `session` tworzy `ghost context` (Reguła 7.15) — blokuje `adversarial-review.sh` S4.
+Agent który zgaduje `citySlug` z `props` zamiast `session` tworzy `ghost context` (Reguła 7.9) — blokuje `adversarial-review.sh` S4.

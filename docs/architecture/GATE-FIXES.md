@@ -96,7 +96,7 @@ Wycięte w hilux: decyzja `approach` (zwykle wynika ze `scope` — trzeci podpis
 4. **Liczby w case study CityPulse** nadal nie domykają się (77% vs 80.8% vs 82.1%). Nie ruszałem marketingu — to decyzja autora, nie bramki.
 5. **Człowiek może klepnąć decyzję bez czytania.** Skrypt nie odróżni świadomej zgody od „enter, enter". Ograniczają to: ≥ 2 opcje z ceną, `must_not`, obserwowalne `done_when`, wygasanie i osobny plik decyzji w historii git (widać kto i kiedy).
 6. **Cała walidacja jest syntetyczna.** 46/46 dowodzi, że bramki zachowują się zgodnie ze specyfikacją — **nie** że pomagają w prawdziwym monorepo. Hilux jest sprawdzony przez 500 tys. km, nie przez kartę katalogową. Pierwszy realny test: 2 tygodnie, 5 biletów, jeden prawdziwy agent.
-7. **Reguły 7.1–7.16** nadal są w większości umową, nie kodem. Zmierzone egzekwowanie: 7.2 (S3, E5/E6), 7.8/7.9 (S1), 7.10 (S7 opt-in), 7.17 (F4, F5), 7.18 (S5, Inception), 7.19, 7.20. Reszta = review człowieka.
+7. **Reguł jest 8, nie 21** (2026-10-30). Treść 13 dawnych nagłówków scalono w ocalałe; `7.8` skasowano, bo wskazywał nieistniejące narzędzia. Zmierzone egzekwowanie: 7.9 (S3, E5/E6), 7.4 (S1, S7 opt-in), 7.17 (F4, F5), 7.18 (S5, Inception), 7.19, 7.20, 7.21. Reszta = review człowieka.
 
 ## 6. Jak sprawdzić to samodzielnie w 60 sekund
 
