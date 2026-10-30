@@ -1,0 +1,78 @@
+{
+  "_disclaimer": "PRZYKŁAD STRUKTURY, nie dowód projektu. Komendy są realne i wykonywalne z katalogu repo; pola 'tests' i 'mutations' są ilustracyjne.",
+  "ticket": "CP-142",
+  "commit": "7644e54",
+  "intent": {
+    "falsifiable": "Endpoint GET /api/cities/:slug zwraca 403, gdy slug nie należy do tenanta z sesji.",
+    "non_goals": [
+      "nie zmieniamy schematu bazy",
+      "nie ruszamy logowania",
+      "bez zmian w UI"
+    ]
+  },
+  "code_changed": true,
+  "confidence": "high",
+  "claims": [
+    {
+      "id": "C1",
+      "text": "Bramka epistemiczna wspiera tryb wykonujący dowody.",
+      "kind": "behavior",
+      "cmd": "python3 scripts/epistemic-gate.py --help",
+      "expected": "--execute",
+      "observed": "usage: epistemic-gate.py [-h] [--file FILE] [--execute]",
+      "verified": true
+    },
+    {
+      "id": "C2",
+      "text": "Artefakt 'frankenstein' jest blokowany przez preflight.",
+      "kind": "behavior",
+      "cmd": "python3 scripts/preflight-gate.py --file docs/preflight/CP-666.gaming.json; echo \"exit=$?\"",
+      "expected": "exit=1",
+      "observed": "exit=1",
+      "verified": true
+    },
+    {
+      "id": "C3",
+      "text": "Detektor grzechów rozpoznaje >=4 klasy (test własny).",
+      "kind": "behavior",
+      "cmd": "bash scripts/adversarial-review.sh --self-test",
+      "expected": "SELF-TEST PASSED",
+      "observed": "✅ SELF-TEST PASSED: detektor rozpoznał 5 klas grzechów",
+      "verified": true
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H1",
+      "text": "Slug był czytany z req.body zamiast z sesji.",
+      "predicted": "Po poprawce żądanie z obcym slugiem zwróci 403, a log pokaże session_tenant != body_slug.",
+      "predicted_if_wrong": "Nadal 200 i log nie zawiera session_tenant (wtedy źródłem jest cache uprawnień).",
+      "result": "confirmed"
+    }
+  ],
+  "tests": {
+    "added": 3,
+    "removed": 0
+  },
+  "mutations": {
+    "killed": 9,
+    "survived": 1
+  },
+  "unknowns": [
+    "Zachowanie przy tenancie usuniętym w trakcie sesji — poza zakresem tego biletu."
+  ],
+  "alternatives_rejected": [
+    {
+      "option": "Walidacja sluga w middleware globalnym",
+      "why": "rozmywa granicę: middleware nie zna modelu uprawnień, wymagałby duplikacji reguł",
+      "cost": "2x więcej kodu i drugie źródło prawdy o tenantach"
+    }
+  ],
+  "sources": [
+    {
+      "ref": "ADR-0043",
+      "reliability": "zatwierdzone przez człowieka",
+      "would_change_mind": "nowy ADR o rozproszonej walidacji"
+    }
+  ]
+}

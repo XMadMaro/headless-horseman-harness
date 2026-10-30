@@ -2,6 +2,8 @@
 
 # 🐎 Headless Horseman Harness (HHH)
 
+**Polski** · [English](README.en.md)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Battle Tested](https://img.shields.io/badge/Battle--Tested-CityPulse%20(GovTech)-success)](https://github.com/XMadMaro/CityPulseV2)
 [![Zero LLM Gates](https://img.shields.io/badge/Gates-Deterministic%20(Zero%20LLM)-orange)](#-5-warstw-ochrony--co-dostajesz-w-pudełku)
@@ -12,7 +14,30 @@
 
 Template dyscypliny architektonicznej dla dużych projektów monorepo (TS + Python, Nx/Turborepo/pnpm/uv), w których zjawisko **`agent rot`** (degradacja kodu przez AI) zazwyczaj paraliżuje rozwój po 2–3 tygodniach.
 
-Zamiast kolejnego szablonu z gotowym frameworkiem (Next.js + Prisma) dostajesz **deterministyczną uprząż inżynierską**: 5 mechanicznych warstw kontroli, które fizycznie uniemożliwiają agentom zgadywanie wymagań, mockowanie testów i maskowanie błędów produkcyjnych.
+Zamiast kolejnego szablonu z gotowym frameworkiem (Next.js + Prisma) dostajesz **deterministyczną uprząż inżynierską**: bramki z kodem wyjścia, hash-pinem i własnym samotestem.
+
+**Uczciwa skala (zmierzona, nie deklarowana):** 7 bramek blokujących (`gate-lock`, Inception, Preflight, Epistemic, Decision, Adversarial, selftest) + 2 reguły procesu (7.19 myśl-przed-kodem, 7.20 budżet/anty-pętla). Nie „fizycznie uniemożliwiają” — **podnoszą cenę kłamstwa i obejścia**. Pozostałe reguły to umowa społeczna, której pilnuje review człowieka.
+Pełny stan: `docs/architecture/GATE-FIXES.md`. Dowód: `bash scripts/selftest.sh` → 52/52.
+
+---
+
+## 🛻 Profil: Hilux czy Full (domyślnie Hilux)
+
+Uprząż ma dwa tryby — **nie musisz włączać wszystkiego**. Wybór jest w pliku `hhh.profile`:
+
+| | **hilux** (domyślnie) | **full** |
+|---|---|---|
+| Kroki w pętli | 7 | 9 |
+| Punkty decyzyjne (podpisy człowieka) | **2** (`scope`, `accept`) | 3 (+`approach`) |
+| Bramki w pętli | 3 (preflight, skan diffu, dowody) | 6 |
+| Pre-commit (zmierzone) | **~140 ms** — pomija Inception i dowody | ~200 ms |
+| Dla kogo | 1–5 osób, monorepo bez RLS, chcesz dowozić | multi-tenant/GovTech, długa historia regresji |
+
+```bash
+echo "profile=hilux" > hhh.profile   # domyślnie i tak tyle jest
+```
+
+**Zasada Hiluxa:** bramka, która w tygodniu daje > 5% fałszywych alarmów, **wypada** — nie jest „dostrajana”. Więcej bramek ≠ większa kontrola; to Ferrari, które stoi w serwisie.
 
 ---
 
@@ -45,42 +70,56 @@ Uprząż została wyjęta bezpośrednio z żywego projektu produkcyjnego **[City
 
 ---
 
-## 🛡️ 5 Warstw Ochrony — co dostajesz w pudełku
+## 🛡️ 8 Bramek — co realnie blokuje commit
 
-```
-            [ Prompt Użytkownika ]
-                      │
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 1. Inception Gate (/grill-me)            │ ──► Blokuje brakujące założenia i zgadywanie
- └────────────────────┬─────────────────────┘
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 2. ub-mode (Uncle Bob Discipline)        │ ──► Wymusza Subtract Before Add & Zero Placebo
- └────────────────────┬─────────────────────┘
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 3. Adversarial Code Review (Zero LLM)    │ ──► Skanuje git diff na 7 grzechów głównych
- └────────────────────┬─────────────────────┘
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 4. Visual Regression Gate                │ ──► Wykrywa zgnieciony layout na 1440px i 1024px
- └────────────────────┬─────────────────────┘
-                      ▼
- ┌──────────────────────────────────────────┐
- │ 5. Gate Integrity Sentinel               │ ──► Blokuje próby osłabienia reguł w git hooks
- └────────────────────┬─────────────────────┘
-                      ▼
-         [ Bezpieczny Commit do Main ]
+```text
+  [ Intencja człowieka ]
+        │
+        ▼
+  Inception Gate .......... wywiad + WIP=1
+        │
+        ▼
+  Preflight (7.19) ........ czy pliki PRZECZYTANE? cytat z każdego
+        │                   plan od subtract/diagnose, brak duplikacji
+        ▼
+  🛑 DECYZJA: scope ....... podpis człowieka
+        │
+        ▼
+  Implementacja (agent) ... kod + test RED→GREEN
+        │
+        ▼
+  Adversarial Review ...... 7 grzechów, tylko linie dodawane, plik:linia
+        │
+        ▼
+  Epistemic (7.20) ........ dowody WYKONANE (--execute), nie zadeklarowane
+        │
+        ▼
+  🛑 DECYZJA: accept ...... podpis człowieka (nic bez odbioru)
+        │
+        ▼
+  Gate Integrity .......... harness.lock: podmiana bramki wykryta
+        │
+        ▼
+      [ Commit do main ]
 ```
 
-| # | Warstwa | Narzędzie | Co dokładnie blokuje? |
+Sterowanie całością: `python3 scripts/hhh-run.py --ticket CP-xxx --run`
+(exit 3 = STOP, potrzebna decyzja człowieka · exit 1 = robota agenta)
+
+| # | Bramka | Narzędzie | Co dokładnie blokuje |
 |---|---|---|---|
-| **1** | **Inception Gate** | `scripts/docs-provenance.py` + `docs/tasks/TEMPLATE.md` | Agent nie wejdzie w stan `IN_PROGRESS` bez udokumentowanego wywiadu `## Decyzje z wywiadu (/grill-me)` (min. 50 znaków, źródło danych, obsługa błędu, granice Must NOT). |
-| **2** | **ub-mode** | `AGENTS.md` (Reguła 7.17) + `scripts/ub-metrics.sh` | Wymusza *Subtract Before You Add* (wycięcie martwego kodu przed dodaniem nowego), *Attack the Premise*, *Null-Return Check* oraz raport złożoności cyklomatycznej (`crapper`) i duplikacji (`dryer`). |
-| **3** | **Adversarial Review** | `scripts/adversarial-review.sh` | Bezwzględny skaner `git diff origin/main...HEAD` wykrywający 7 grzechów głównych kodu bez użycia LLM (czysty, deterministyczny ripgrep/bash). |
-| **4** | **Visual Regression** | `e2e/visual-regression.spec.ts` | Testy Playwright na ekranach `1440x900` oraz `1024x768` (13-calowe laptopy) z wyłączonymi animacjami — chroni formularze przed zgnieceniem przez nawigację boczną. |
-| **5** | **Gate Integrity** | `scripts/check-gate-integrity.sh` | Pilnuje nienaruszalności uprzęży: sprawdza liczbę aktywnych reguł, blokuje flagi `--no-verify`, `skip-ci` oraz próby usuwania skryptów sprawdzających. |
+| **1** | **Inception** | `docs-provenance.py` | `IN_PROGRESS` bez udokumentowanego wywiadu (`## Decyzje z wywiadu`, ≥50 znaków, źródło + obsługa błędu + Must NOT) oraz więcej niż jedno zadanie w toku (WIP=1). |
+| **2** | **Preflight (7.19)** | `preflight-gate.py` | Kod bez **cytatu z każdego dotykanego pliku** (dowód lektury, ±10 linii). Plan zaczynający się od `subtract`/`diagnose`. Brak sekcji Subtract. Duplikacja istniejącego symbolu. Budżet >15 plików / >400 LOC. |
+| **3** | **Decision: scope (7.21)** | `decision-gate.py` | Start bez decyzji podpisanej przez człowieka: ≥2 opcje z ceną, `must_not`, obserwowalne `done_when`, fraza `Potwierdzam:`. **Zakaz samo-akceptacji (D7).** |
+| **4** | **Adversarial** | `adversarial-review.sh` | 7 grzechów: silent fallback (`except: pass`, `catch {}`), `!important`, asercje pozorne, sekrety, `DROP` bez zatwierdzenia, zależności bez uzasadnienia, tenant leak (opt-in). **Tylko linie dodawane** — usunięcie grzechu nie jest karane (7.17). |
+| **5** | **Epistemic (7.20)** | `epistemic-gate.py` | Twierdzenie bez `cmd`/`expected`/`observed`. Dowód autorski (`echo`), maskowanie (`\|\| true`), komenda spoza allowlisty. `confidence: high` bez **wykonanego** dowodu. Hipoteza bez falsyfikatora. |
+| **6** | **Decision: accept (7.21)** | `decision-gate.py` | Zamknięcie bez odbioru przez człowieka. Decyzja nieodwracalna bez `acknowledged_irreversible` + `blast_radius`. Decyzja po terminie ważności. |
+| **7** | **Gate Integrity** | `gate-lock.sh` + `check-gate-integrity.sh` | Podmiana bramki (hash w `harness.lock`), usunięcie bramki, 18 pustych zaślepek zamiast reguł, wyjątki bez terminu. |
+| **8** | **Self-test** | `selftest.sh` | Regresja samej uprzęży: każda bramka musi **przejść** i **zablokować** to, co deklaruje (52 asercje). |
+
+Poza tą ósemką: `acceptance-gate.py` — testy akceptacyjne, których agent **nie widzi** (`hidden/`, sha256 + lock, podmiana = STOP). To nie jest bramka na deklaracje, tylko na produkt.
+
+**To nie są bramki** (świadomie): `ub-mode` to zestaw zasad w `AGENTS.md` (7.17) plus raport metryk, a `e2e/visual-regression.spec.ts` to **wzorzec** wymagający runnera Playwright — bez `package.json`, `playwright.config.ts` i baseline'ów nie chroni niczego.
 
 ---
 
@@ -95,14 +134,31 @@ bash install.sh
 
 ### Sposób 2: Instalacja w istniejącym repozytorium
 ```bash
-# 1. Pobierz pliki uprzęży
-curl -sSL https://raw.githubusercontent.com/XMadMaro/headless-horseman-harness/main/install.sh | bash
+# 1. Skopiuj pliki uprzęży (install.sh NIE pobiera nic z sieci — instaluje hooki w checkoucie)
+npx degit XMadMaro/headless-horseman-harness/. ./_harness && cp -r ./_harness/. . && rm -rf ./_harness
 
-# 2. Uruchom weryfikację lokalną
-bash scripts/check-gate-integrity.sh
-bash scripts/adversarial-review.sh origin/main
-python3 scripts/docs-provenance.py --check
+# 2. Zainstaluj hooki (pre-commit: integralność + preflight; pre-push: skaner + decyzje)
+bash install.sh
+
+# 2b. Włącz CI — GOTOWE workflowy leżą w docs/ci/ (token bez uprawnień `workflows`
+#     nie może zapisywać .github/workflows; bez tego kroku CI nie sprawdza bramek)
+cp docs/ci/gates.yml docs/ci/adversarial-review.yml .github/workflows/
+
+# 3. Weryfikacja: każda bramka musi przejść I zablokować to, co ma blokować
+bash scripts/selftest.sh                 # 26 asercji, oczekiwane: 26/26
+bash scripts/gate-lock.sh --check        # integralność bramek (hash-pin)
+bash scripts/adversarial-review.sh origin/main     # skan grzechów (tylko linie dodawane)
+python3 scripts/docs-provenance.py --check         # wywiad + WIP=1
+python3 scripts/preflight-gate.py --ticket CP-XXX  # myśl i posprzątaj przed kodem
+python3 scripts/epistemic-gate.py --ticket CP-XXX --execute  # dowody wykonane
+
+# 4. Prowadzenie krok po kroku (zatrzymuje się na decyzjach człowieka)
+python3 scripts/hhh-run.py --ticket CP-XXX --status   # plan kroków
+python3 scripts/hhh-run.py --ticket CP-XXX --run      # 0=zamknięte, 1=robota agenta, 3=STOP: decyzja człowieka
+python3 scripts/decision-gate.py --ask --ticket CP-XXX --step scope   # grill w terminalu
 ```
+
+> Włączanie bram opcjonalnych jest jawne: Preflight działa, gdy istnieje katalog `docs/preflight/`, Epistemic — gdy `docs/epistemic/`. To celowe: brak tarcia przy adopcji, ale też brak cichego „pominięto”.
 
 ---
 
@@ -139,7 +195,7 @@ HHH jest natywnie dostosowany do wiodących asystentów programistycznych:
 Plik `AGENTS.md` oraz katalog `skills/` są automatycznie wykrywane. Claude traktuje `AGENTS.md` jako nadrzędną instrukcję systemową repozytorium.
 
 ### 2. Antigravity IDE / CLI
-Uprząż posiada wbudowany podział ról wg Reguły 7.5:
+Uprząż posiada wbudowany podział ról wg Reguły 7.11:
 - **Antigravity IDE (`BUILDER`)** implementuje kod i testy.
 - **Antigravity CLI (`GATEKEEPER`)** wykonuje automatyczną Receptę Weryfikacji Manualnej (Reguła 7.11) i przygotowuje surowy stdout dla człowieka.
 
@@ -155,19 +211,33 @@ ln -s AGENTS.md .cursorrules
 
 ```
 headless-horseman-harness/
-├── AGENTS.md                 # System operacyjny agenta (Reguły 7.1 - 7.18)
+├── AGENTS.md                 # System operacyjny agenta (8 reguł: 7.4-7.21)
 ├── KNOWN_LIMITATIONS.md      # Co uprząż rozwiązuje, a czego NIE zastąpi
 ├── README.md                 # Główna dokumentacja projektu
 ├── install.sh                # Skrypt instalacyjny hooków gita
 ├── docs/tasks/
 │   ├── TEMPLATE.md           # Szablon zadania z sekcjami Inception Gate i Subtract
 │   └── ACTIVE.md             # Rejestr WIP=1 i protokół Zero Próżni (Reguła 2.9)
+├── harness.lock              # Hash-pin bramek (integralność, nie licznik nagłówków)
 ├── scripts/
-│   ├── adversarial-review.sh # Deterministyczny skaner 7 grzechów głównych
-│   ├── check-gate-integrity.sh # Weryfikacja nienaruszalności uprzęży
-│   ├── docs-provenance.py    # Zero-dependency Inception Gate checker
+│   ├── adversarial-review.sh # Skaner grzechów: tylko linie dodawane, prawdziwe plik:linia
+│   ├── check-gate-integrity.sh # Weryfikacja nienaruszalności uprzęży (woła gate-lock)
+│   ├── gate-lock.sh          # Generowanie/weryfikacja harness.lock (sha256 + zbiór reguł)
+│   ├── docs-provenance.py    # Inception Gate: wywiad + WIP=1 (fail-closed)
+│   ├── preflight-gate.py     # 7.19: dive/subtract/duplikacja/budżet przed kodem
+│   ├── epistemic-gate.py     # 7.20: dowody wykonywalne (E1-E10)
+│   ├── decision-gate.py      # 7.21: punkty decyzyjne, zakaz samo-akceptacji (D1-D10)
+│   ├── hhh-run.py            # orkiestrator: bramki krok po kroku, STOP na decyzji
+│   ├── selftest.sh           # Macierz PASS/FAIL wszystkich bramek (52 asercje)
+│   ├── acceptance-gate.py    # Testy poza zasięgiem agenta (tamper=STOP, bez oracle)
+│   ├── install-hooks.sh      # Hooki git z backupem cudzych
 │   ├── ub-metrics.sh         # Pomiary złożoności cyklomatycznej i duplikacji
-│   └── config.sh             # Konfiguracja ścieżek i flag monorepo
+├── docs/preflight/           # Artefakty 7.19 (schemat + wzorce: uczciwy / frankenstein)
+├── docs/epistemic/           # Artefakty 7.20 (schemat + wzorce: uczciwy / gra w bramkę)
+├── docs/decisions/           # Artefakty 7.21 (schemat + wzorce: podpisana / samo-akceptacja)
+├── docs/architecture/        # Platforma monorepo, wymuszanie krytycyzmu, status napraw
+├── docs/research/            # Dowody: jak duże projekty degradują się pod AI (i co działa)
+├── hidden/                   # Testy akceptacyjne, których agent NIE widzi (sha256 + lock)
 ├── skills/                   # Skille inżynierskie
 │   ├── grill-me/             # Protokół wywiadu przed przystąpieniem do kodu
 │   ├── ub-mode/              # Reguły inżynierskie Uncle Boba

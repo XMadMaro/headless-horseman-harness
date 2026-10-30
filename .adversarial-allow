@@ -1,0 +1,8 @@
+# .adversarial-allow — wyjątki z właścicielem i TERMINEM. Format:
+#   RULE  glob  owner=@kto  reason="..."  expires=YYYY-MM-DD
+# Reguły: brak terminu => BLOCKING. Po terminie => BLOCKING (dług staje się widoczny).
+S1  tests/fixtures/**  owner=@harness  reason="wzorce do samotestu detektora"  expires=2099-12-31
+S2  tests/fixtures/**  owner=@harness  reason="wzorce do samotestu detektora"  expires=2099-12-31
+S3  tests/fixtures/**  owner=@harness  reason="wzorce do samotestu detektora"  expires=2099-12-31
+S4  tests/fixtures/**  owner=@harness  reason="wzorce do samotestu detektora"  expires=2099-12-31
+S5  tests/fixtures/**  owner=@harness  reason="wzorce do samotestu detektora"  expires=2099-12-31

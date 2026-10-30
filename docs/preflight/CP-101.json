@@ -1,0 +1,49 @@
+{
+  "_disclaimer": "Artefakt spisany PRZY commitcie, nie przed kodem. To naruszenie kolejności z 7.19 i jest tu nazwane, a nie ukryte. Zawartość jest prawdziwa: cytaty istnieją w plikach, liczby zmierzone.",
+  "ticket": "CP-101",
+  "kind": "fix",
+  "intent": {
+    "falsifiable": "Po commicie `bash scripts/selftest.sh` daje 52/52, w tym dwie asercje: 'brudny working tree ... exit=0' i 'repo bez gita ... exit=0'. Usunięcie którejkolwiek ma natychmiast czerwienić macierz.",
+    "non_goals": [
+      "Nie zmieniam predykatu check-gate-integrity ani preflight-gate.py (moja własna zmiana zwężająca została cofnięta)",
+      "Nie dodaję metryki change fail rate / escape rate (to osobny bilet)",
+      "Nie zmieniam bramek epistemic/decision ani ich artefaktów"
+    ]
+  },
+  "files_touched": [
+    {
+      "path": "scripts/acceptance-gate.py",
+      "line": 24,
+      "quote": "CZEGO BRAMKA *NIE* WYMAGA (zmierzone w selftest, nie założone)",
+      "why": "dokumentujemy zmierzone granice bramki: brak wymogu czystego working tree i brak zależności od gita"
+    },
+    {
+      "path": "scripts/selftest.sh",
+      "line": 232,
+      "quote": "brudny working tree (śmieci + zmiany) nie blokuje",
+      "why": "asercja pinująca zachowanie, którego dotyczyło pytanie użytkownika"
+    },
+    {
+      "path": "README.en.md",
+      "line": 91,
+      "quote": "Not counted in the eight",
+      "why": "licznik '8 bramek' musi pozostać prawdziwy, a nowa warstwa nazwana wprost"
+    },
+    {
+      "path": "README.md",
+      "line": 120,
+      "quote": "Poza tą ósemką",
+      "why": "to samo zdanie po polsku — inaczej dwie wersje README mówią co innego"
+    }
+  ],
+  "subtract": [
+    {
+      "path": "scripts/check-gate-integrity.sh",
+      "action": "revert",
+      "what": "cofnięta moja zmiana, która wyłączała scripts/ z predykatu 'kod bez preflight'. Agent nie zwęża bramki, która go blokuje; decyzja o zakresie 7.19 należy do człowieka"
+    }
+  ],
+  "plan": ["subtract", "diagnose", "test", "implement", "verify"],
+  "budget": { "max_files": 6, "max_loc": 60 },
+  "reuse": []
+}

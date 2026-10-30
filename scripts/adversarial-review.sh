@@ -1,155 +1,316 @@
 #!/usr/bin/env bash
-# adversarial-review.sh — deterministyczny skaner 7 grzechów na git diff
-# Zero LLM. Ten sam diff = ten sam werdykt. Monorepo-agnostic (TS + Python).
-# Użycie: bash scripts/adversarial-review.sh [origin/main] [--enable-tenant-check] [--test-negative]
+# adversarial-review.sh — deterministyczny skaner grzechów głównych na git diff.
+# Zero LLM. Ten sam diff = ten sam werdykt.
+#
+# Zasady (poprawki po audycie):
+#   * skanujemy WYŁĄCZNIE linie dodawane (+) — usuwanie grzechu nigdy nie jest karane (Reguła 7.17 Subtract)
+#   * lokalizacja w raporcie jest LICZONA z nagłówka @@ (nigdy nie zmyślana)
+#   * kod wyjścia odpowiada werdyktowi (0 = PASS, 1 = BLOCKING)
+#   * każdy wyjątek ma właściciela, powód i termin ważności (.adversarial-allow)
+#
+# Użycie:
+#   bash scripts/adversarial-review.sh [base_ref] [--enable-tenant-check]
+#   bash scripts/adversarial-review.sh --self-test      # test własny: 0 = detektor działa, 1 = regresja
+#   bash scripts/adversarial-review.sh --test-negative   # surowy test negatywny (1 = wykryto, jak przy realnym diffie)
 set -euo pipefail
 
-BASE_REF="${1:-origin/main}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
+
+BASE_REF=""
 ENABLE_TENANT=false
 TEST_NEGATIVE=false
+SELF_TEST=false
 for arg in "$@"; do
-  [[ "$arg" == "--enable-tenant-check" ]] && ENABLE_TENANT=true
-  [[ "$arg" == "--test-negative" ]] && TEST_NEGATIVE=true
-  [[ "$arg" == "--help" ]] && { echo "Usage: bash scripts/adversarial-review.sh [base_ref] [--enable-tenant-check] [--test-negative]"; exit 0; }
+  case "$arg" in
+    --enable-tenant-check) ENABLE_TENANT=true ;;
+    --test-negative)       TEST_NEGATIVE=true ;;
+    --self-test)           SELF_TEST=true ;;
+    --help|-h)
+      echo "Usage: bash scripts/adversarial-review.sh [base_ref] [--enable-tenant-check] | --test-negative | --self-test"
+      exit 0 ;;
+    -*) echo "Nieznana flaga: $arg" >&2; exit 2 ;;
+    *)  BASE_REF="$arg" ;;
+  esac
 done
-# handle first arg being flag
-if [[ "$BASE_REF" == --* ]]; then BASE_REF="origin/main"; fi
+BASE_REF="${BASE_REF:-origin/main}"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
-BLOCKING=0; ADVISORY=0
-REPORT_ROWS=""
 
-add_row() {
-  local level="$1" sin="$2" loc="$3" desc="$4"
-  REPORT_ROWS+="$level|$sin|$loc|$desc
-"
-  [[ "$level" == "BLOCKING" ]] && BLOCKING=$((BLOCKING+1)) || ADVISORY=$((ADVISORY+1))
+DIFF_FILE="$(mktemp)"
+FINDINGS_FILE="$(mktemp)"
+ALLOW_FILE=".adversarial-allow"
+
+cleanup() {
+  rm -f "$DIFF_FILE" "$FINDINGS_FILE" 2>/dev/null || true
+  if [[ -n "${TEST_DIR:-}" && -d "${TEST_DIR:-}" ]]; then rm -rf "$TEST_DIR" 2>/dev/null || true; fi
+  return 0   # P0-1: trap nie może nadpisać kodu wyjścia bramki
 }
-
-DIFF_FILE=$(mktemp)
-TEST_DIR=""
-cleanup(){ rm -f "$DIFF_FILE"; [[ -n "$TEST_DIR" ]] && rm -rf "$TEST_DIR"; }
 trap cleanup EXIT
 
-if [[ "$TEST_NEGATIVE" == true ]]; then
-  TEST_DIR=$(mktemp -d)
-  mkdir -p "$TEST_DIR/apps/admin/src/app" "$TEST_DIR/packages/shared/db/migrations"
-  cat > "$TEST_DIR/apps/admin/src/app/test.tsx" <<'EOF'
-try { doSomething(); } catch { return null; }
-const style = { color: 'red !important' };
-expect(result).toBeDefined();
-const secretKey = "sk-1234567890abcdef1234567890abcdef";
-EOF
-  mkdir -p "$TEST_DIR/packages/shared/db/migrations"
-  cat > "$TEST_DIR/packages/shared/db/migrations/0099_test.sql" <<'EOF'
--- no approved tag
-ALTER TABLE users DROP COLUMN email;
-EOF
-  cat > "$DIFF_FILE" <<EOF
-diff --git a/apps/admin/src/app/test.tsx b/apps/admin/src/app/test.tsx
-+ try { doSomething(); } catch { return null; }
-+ const style = { color: 'red !important' };
-+ expect(result).toBeDefined();
-+ const secretKey = "sk-1234567890abcdef1234567890abcdef";
-diff --git a/packages/shared/db/migrations/0099_test.sql b/packages/shared/db/migrations/0099_test.sql
-+ ALTER TABLE users DROP COLUMN email;
-EOF
-  echo -e "${BLUE}🧪 TRYB TEST-NEGATIVE: wstrzyknięto 4 zatrute wzorce${NC}"
-else
-  # real diff
-  if ! git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠️  Base ref $BASE_REF nie istnieje, używam HEAD~1${NC}"
-    BASE_REF="HEAD~1"
+# ---------------------------------------------------------------- self-test fixtures
+make_negative_fixture() {
+  # Wzorce trzymamy w tests/fixtures/negative/ (a nie w tym skrypcie), żeby skaner
+  # nie flagował własnych stringów testowych. Wyjątek: .adversarial-allow (z terminem).
+  local fx="tests/fixtures/negative"
+  TEST_DIR="$(mktemp -d)"
+  if [[ ! -f "$fx/test.tsx" || ! -f "$fx/0099_test.sql" ]]; then
+    echo "❌ Brak fixture'ów w $fx — nie mogę wykonać samotestu." >&2
+    return 1
   fi
-  git diff "$BASE_REF"...HEAD --unified=0 > "$DIFF_FILE" 2>/dev/null || true
+  {
+    echo "diff --git a/apps/admin/src/app/test.tsx b/apps/admin/src/app/test.tsx"
+    echo "--- a/apps/admin/src/app/test.tsx"
+    echo "+++ b/apps/admin/src/app/test.tsx"
+    echo "@@ -7,0 +8,4 @@"
+    sed 's/^/+/' "$fx/test.tsx"
+    echo "diff --git a/packages/shared/db/migrations/0099_test.sql b/packages/shared/db/migrations/0099_test.sql"
+    echo "--- a/packages/shared/db/migrations/0099_test.sql"
+    echo "+++ b/packages/shared/db/migrations/0099_test.sql"
+    echo "@@ -1,0 +2,1 @@"
+    sed 's/^/+/' "$fx/0099_test.sql"
+  } > "$DIFF_FILE"
+}
+
+if [[ "$TEST_NEGATIVE" == true || "$SELF_TEST" == true ]]; then
+  make_negative_fixture
+  echo -e "${BLUE}🧪 TRYB SAMOTESTU: wstrzyknięto wzorce z 5 różnych klas grzechów${NC}"
+else
+  if ! git rev-parse --verify "${BASE_REF}^{commit}" >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  Base ref '$BASE_REF' nie istnieje — używam HEAD~1${NC}"
+    BASE_REF="HEAD~1"
+    git rev-parse --verify "${BASE_REF}^{commit}" >/dev/null 2>&1 || {
+      echo -e "${YELLOW}⚠️  Brak historii (HEAD~1 nie istnieje) — nie ma czego skanować.${NC}"
+      echo "Podsumowanie: BLOCKING=0, ADVISORY=0, ALLOWED=0"
+      echo -e "${GREEN}✅ ADVERSARIAL REVIEW PASSED: brak zmian.${NC}"
+      exit 0
+    }
+  fi
+  git diff "$BASE_REF...HEAD" --unified=0 > "$DIFF_FILE" 2>/dev/null || true
   if [[ ! -s "$DIFF_FILE" ]]; then
     echo -e "${GREEN}✅ Brak diffu do sprawdzenia ($BASE_REF...HEAD pusty)${NC}"
-    echo "Podsumowanie: BLOCKING=0, ADVISORY=0"
-    echo "✅ ADVERSARIAL REVIEW PASSED: Brak zmian."
+    echo "Podsumowanie: BLOCKING=0, ADVISORY=0, ALLOWED=0"
+    echo -e "${GREEN}✅ ADVERSARIAL REVIEW PASSED: brak zmian.${NC}"
     exit 0
   fi
 fi
 
-# Helper: grep in diff (+ lines only)
-# S1: Silent Fallback
-#  - Python: except: pass, except Exception: return None, bare except
-#  - JS/TS: catch {} pusty, catch { return null }
-if grep -Eq "^\+\s*(except\s*:|except\s+Exception.*:\s*(pass|return None|return null))" "$DIFF_FILE"; then
-  while IFS= read -r line; do add_row "BLOCKING" "S1: Silent Fallback (7.16)" "$(echo "$line"|cut -c1-80)" "Python bare except/pass ukrywa błąd"; done < <(grep -n "^\+\s*except" "$DIFF_FILE" | head -5)
-fi
-if grep -Eq "^\+\s*.*catch\s*\{\s*\}" "$DIFF_FILE" || grep -Eq "^\+\s*.*catch\s*\([^)]*\)\s*\{\s*return null" "$DIFF_FILE"; then
-  while IFS= read -r line; do add_row "BLOCKING" "S1: Silent Fallback (7.16)" "$(echo "$line"|cut -c1-80)" "Pusty catch / catch->null"; done < <(grep -n "catch" "$DIFF_FILE" | head -5)
-fi
-# unified S1 counter from patterns above — if none matched but generic pattern exists, count 1
-if grep -qE "catch\s*\{\s*\}|catch\s*\{\s*return null" "$DIFF_FILE" && [[ $BLOCKING -eq 0 ]]; then
-  add_row "BLOCKING" "S1: Silent Fallback (7.16)" "apps/...:2" "Wyciszenie wyjątku w catch: + try { doSomething(); } catch { return null; }"
-fi
+# ---------------------------------------------------------------- detekcja (tylko linie dodawane)
+# Wyjście: RULE<TAB>LEVEL<TAB>path<TAB>line<TAB>snippet
+ENABLE_TENANT_AWK=$([[ "$ENABLE_TENANT" == true ]] && echo 1 || echo 0)
 
-# S2: Destructive CSS
-if grep -q "!important" "$DIFF_FILE"; then
-  add_row "BLOCKING" "S2: Destructive CSS (7.18)" "$(grep -n "!important" "$DIFF_FILE" | head -1 | cut -d: -f1 | xargs -I{} echo "apps/admin/src/app/test.tsx:3")" "Niedozwolony !important w TSX/CSS"
-fi
+# Uwaga: mawk (domyślny awk w Debianie/Ubuntu) NIE wspiera interwałów {n,}.
+# Dlatego sekrety liczymy funkcją toklen(), a nie regexem — inaczej wzorzec nigdy nie dopasuje.
+# shellcheck disable=SC2016
+awk -v tenant="$ENABLE_TENANT_AWK" '
+function emit(rule, level, path, line, snip) {
+  gsub(/\t/, " ", snip)
+  printf "%s\t%s\t%s\t%s\t%s\n", rule, level, path, line, substr(snip, 1, 110)
+}
+function is_test_file(p) { return (p ~ /(\.(spec|test|e2e)\.[a-z]+$)|(^e2e\/)/) }
+function is_migration(p) { return (p ~ /(^|\/)(migrations|alembic)\//) }
+function is_cssish(p) { return (p ~ /\.(css|scss|sass|less|tsx|jsx|vue|svelte)$/) }
+function is_code(p) { return (p ~ /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|rb|cs|php|vue|svelte|sh|sql)$/) }
+function is_docs(p) { return (p ~ /\.(md|mdx|txt|rst)$/ || p ~ /(^|\/)docs\//) }
 
-# S3: Fake Assertion
-if grep -q "toBeDefined()" "$DIFF_FILE" || grep -q "toBeTruthy()" "$DIFF_FILE" || grep -q "assert True" "$DIFF_FILE"; then
-  add_row "BLOCKING" "S3: Fake Assertion (7.2)" "apps/...:3" "Pozorna asercja expect(..).toBeDefined() / assert True"
-fi
+# długość ciągu alfanumerycznego po markerze (bez interwałów)
+function toklen(s, marker,   i, rest, n, c) {
+  i = index(s, marker); if (i == 0) return 0
+  rest = substr(s, i + length(marker)); n = 0
+  while (1) {
+    c = substr(rest, n + 1, 1)
+    if (c == "") break
+    if (c !~ /[A-Za-z0-9_-]/) break
+    n++
+  }
+  return n
+}
+function has_secret(s,   m, v) {
+  if (toklen(s, "sk-proj-", 10) >= 10) return 1
+  if (toklen(s, "sk-", 10) >= 10) return 1
+  if (toklen(s, "ghp_", 10) >= 10) return 1
+  if (toklen(s, "gho_", 10) >= 10) return 1
+  if (toklen(s, "AKIA", 12) >= 12) return 1
+  if (toklen(s, "xoxb-", 10) >= 10) return 1
+  if (s ~ /BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY/) return 1
+  if (s ~ /(password|passwd|secret|token)[ \t]*[:=][ \t]*["\047]/) {
+    if (match(s, /[:=][ \t]*["\047][^"\047]*["\047]/)) {
+      v = substr(s, RSTART, RLENGTH)
+      gsub(/["\047]/, "", v); gsub(/[:=]/, "", v); gsub(/[ \t]/, "", v)
+      if (length(v) >= 6) return 1
+    }
+  }
+  return 0
+}
 
-# S4: Secret Leak
-if grep -Eq "sk-[a-zA-Z0-9]{10,}|ghp_[a-zA-Z0-9]{10,}|sk-proj-[a-zA-Z0-9_-]{10,}|BEGIN PRIVATE KEY|password\s*=\s*\"[^\"]{3,}\"" "$DIFF_FILE"; then
-  add_row "BLOCKING" "S6: Secret Leak (3.5)" "$(grep -En "sk-|ghp_|BEGIN PRIVATE KEY" "$DIFF_FILE" | head -1 | cut -c1-80)" "Potencjalny wyciek klucza API/tokena"
-fi
+/^diff --git / { path = ""; pending = 0; next }
+/^\+\+\+ / { if ($0 ~ /^\+\+\+ b\//) path = substr($0, 7); else path = ""; next }
+/^@@ / {
+  if (match($0, /\+[0-9]+/)) nl = substr($0, RSTART + 1, RLENGTH - 1) + 0; else nl = 0
+  if (nl > 0) nl = nl - 1
+  pending = 0
+  next
+}
+/^\+/ && !/^\+\+\+/ {
+  line = substr($0, 2); nl++
+  if (path == "") next
+  approved = (line ~ /APPROVED:/)
 
-# S5: Destructive Schema Migration
-if grep -Eq "DROP TABLE|DROP COLUMN|ALTER TABLE.*DROP" "$DIFF_FILE"; then
-  if ! grep -q "APPROVED_DESTRUCTIVE" "$DIFF_FILE"; then
-    add_row "BLOCKING" "S5: Destructive Schema Migration (7.18)" "$(grep -En "DROP" "$DIFF_FILE" | head -1 | cut -c1-80)" "Nieautoryzowana DROP bez -- APPROVED_DESTRUCTIVE: + ALTER TABLE users DROP COLUMN email;"
+  # ---- S1: silent fallback (tylko kod; w dokumentacji to przykład, nie błąd) ----
+  if (!approved && is_code(path)) {
+    # Python: except ...: pass / return None (także w kolejnej linii)
+    if (line ~ /^[ \t]*except[^:]*:[ \t]*(pass|return[ \t]+(None|null))[ \t]*$/) {
+      emit("S1", "BLOCKING", path, nl, line); pending = 0
+    } else if (line ~ /^[ \t]*except([ \t]+[^:]+)?[ \t]*:[ \t]*$/) {
+      pending = nl
+    } else if (pending && line ~ /^[ \t]*(pass|return[ \t]+(None|null))[ \t]*$/) {
+      emit("S1", "BLOCKING", path, pending, "except ... -> " line); pending = 0
+    }
+    # JS/TS: pusty catch, catch z samym komentarzem, catch -> null/undefined
+    else if (line ~ /catch[ \t]*(\([^)]*\))?[ \t]*\{[ \t]*(\/\*([^*]|\*[^\/])*\*\/[ \t]*)?\}[ \t]*$/) {
+      emit("S1", "BLOCKING", path, nl, line); pending = 0
+    } else if (line ~ /catch[ \t]*(\([^)]*\))?[ \t]*\{[ \t]*return[ \t]+(null|undefined);?[ \t]*\}[ \t]*$/) {
+      emit("S1", "BLOCKING", path, nl, line); pending = 0
+    } else if (pending && line ~ /^[ \t]*(return[ \t]+(null|undefined);?)?[ \t]*\}[ \t]*$/) {
+      emit("S1", "BLOCKING", path, pending, "catch ... -> " line); pending = 0
+    } else if (line ~ /catch[ \t]*(\([^)]*\))?[ \t]*\{[ \t]*$/) {
+      pending = nl
+    } else if (line !~ /^[ \t]*(\/\/|#|$)/) {
+      pending = 0
+    }
+  }
+
+  # ---- S2: destructive CSS (pliki produkcyjne) ----
+  if (!approved && line ~ /!important/ && is_cssish(path) && !is_test_file(path))
+    emit("S2", "BLOCKING", path, nl, line)
+
+  # ---- S3: fake assertion ----
+  if (!approved && is_code(path) && line ~ /(toBeDefined\(\)|toBeTruthy\(\)|assert[ \t]+True|assertTrue\(True\))/)
+    emit("S3", "BLOCKING", path, nl, line)
+
+  # ---- S4: sekrety (w dokumentacji ADVISORY: tam często są przykłady) ----
+  if (!approved && has_secret(line))
+    emit("S4", (is_docs(path) ? "ADVISORY" : "BLOCKING"), path, nl, line)
+
+  # ---- S5: destructive migration ----
+  if (!approved && is_migration(path) && line ~ /(DROP[ \t]+TABLE|DROP[ \t]+COLUMN|ALTER[ \t]+TABLE.*DROP)/)
+    emit("S5", "BLOCKING", path, nl, line)
+
+  # ---- S6: dependency bloat (doradczo) ----
+  if (!approved && path ~ /(package\.json|pyproject\.toml)$/ && line ~ /^[ \t]*"[^"]+"[ \t]*:[ \t]*"[~^]?[0-9]/)
+    emit("S6", "ADVISORY", path, nl, line)
+
+  # ---- S7: tenant leak (opt-in) ----
+  if (tenant == 1 && !approved && line ~ /(req|request)\.(body|query|params)\.[A-Za-z0-9_]*(tenant|citySlug|clientId|orgId|workspaceId)/)
+    emit("S7", "BLOCKING", path, nl, line)
+
+  next
+}
+' "$DIFF_FILE" > "$FINDINGS_FILE"
+
+# ---------------------------------------------------------------- allowlist (wyjątki z terminem)
+# Format .adversarial-allow:  RULE  glob  owner=@kto  reason="..."  expires=YYYY-MM-DD
+is_allowed() {
+  local rule="$1" path="$2"
+  [[ -f "$ALLOW_FILE" ]] || return 1
+  local line r g rest exp today
+  today="$(date +%Y-%m-%d)"
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*(#|$) ]] && continue
+    r="$(awk '{print $1}' <<<"$line")"
+    g="$(awk '{print $2}' <<<"$line")"
+    [[ "$r" == "$rule" ]] || continue
+    # shellcheck disable=SC2053
+    [[ "$path" == $g ]] || continue
+    exp="$(grep -oE 'expires=[0-9]{4}-[0-9]{2}-[0-9]{2}' <<<"$line" | cut -d= -f2 || true)"
+    if [[ -z "$exp" ]]; then
+      echo -e "${RED}🚩 WYJĄTEK BEZ TERMINU: $line${NC}" >&2
+      return 2
+    fi
+    if [[ "$exp" < "$today" ]]; then
+      echo -e "${RED}🚩 WYJĄTEK WYGASŁ ($exp): $line${NC}" >&2
+      return 3
+    fi
+    return 0
+  done < "$ALLOW_FILE"
+  return 1
+}
+
+BLOCKING=0; ADVISORY=0; ALLOWED=0
+ROWS=""
+DETECTED_RULES=""
+
+while IFS=$'\t' read -r rule level path line snip; do
+  [[ -z "${rule:-}" ]] && continue
+  rc=0; is_allowed "$rule" "$path" || rc=$?
+  if [[ $rc -eq 0 ]]; then
+    ALLOWED=$((ALLOWED+1)); ROWS+="ALLOWED|$rule|$path:$line|$snip"$'\n'; continue
   fi
-fi
-
-# S6: Dependency Hygiene (informational -> ADVISORY unless strict)
-if grep -Eq "^\+\s*\"[^\"]+\"\s*:\s*\"[^\"]+\"" "$DIFF_FILE" && grep -q "package.json\|pyproject.toml" "$DIFF_FILE"; then
-  # check if CP has justification — heuristic: look for Uzasadnienie in recent CP
-  if ! grep -q "Uzasadnienie" docs/tasks/CP-*.md 2>/dev/null; then
-    add_row "ADVISORY" "S7: Dependency without justification (7.18)" "package.json:1" "Nowa zależność bez sekcji Uzasadnienie w CP"
+  if [[ $rc -eq 2 || $rc -eq 3 ]]; then
+    ROWS+="BLOCKING|$rule (wyjątek bez terminu/po terminie)|$path:$line|$snip"$'\n'
+    BLOCKING=$((BLOCKING+1)); continue
   fi
-fi
-
-# S7: Tenant Leak (opt-in)
-if [[ "$ENABLE_TENANT" == true ]] && grep -Eq "req\.(body|query|params).*citySlug|req\.(body|query|params).*clientId" "$DIFF_FILE"; then
-  add_row "BLOCKING" "S4: Tenant Leak / IDOR (7.10)" "$(grep -En "req\.(body|query|params)" "$DIFF_FILE" | head -1 | cut -c1-80)" "Parametr tenanta z niezaufanego payloadu"
-fi
-
-# Circuit Breaker: check .adversarial-decisions or CP for 3 fails
-if [[ -f ".adversarial-decisions.json" ]] && command -v jq >/dev/null 2>&1; then
-  FAILS=$(jq '[.decisions[] | select(.decision=="fail")] | length' .adversarial-decisions.json 2>/dev/null || echo 0)
-  if [[ "$FAILS" -ge 3 ]]; then
-    echo -e "${RED}🚩 [FLAG:CIRCUIT_BREAKER] 3 nieudane próby z rzędu — STOP, wróć do /grill-me${NC}"
-  fi
-fi
-
-echo ""
-echo "─────────────────────────────────────────────────────────────"
-printf "| %-8s | %-30s | %-30s | %-30s |\n" "Poziom" "Grzech główny" "Lokalizacja" "Opis problemu"
-echo "─────────────────────────────────────────────────────────────"
-if [[ -z "$REPORT_ROWS" ]]; then
-  printf "| %-8s | %-30s | %-30s | %-30s |\n" "PASS" "Wszystkie filtry czyste" "-" "Brak wykrytych grzechów głównych w diffie."
-else
-  while IFS='|' read -r level sin loc desc; do
-    [[ -z "$level" ]] && continue
-    printf "| %-8s | %-30s | %-30s | %-30s |\n" "$level" "$sin" "$loc" "$desc"
-  done <<< "$REPORT_ROWS"
-fi
-echo "─────────────────────────────────────────────────────────────"
-echo "Podsumowanie: BLOCKING=$BLOCKING, ADVISORY=$ADVISORY"
-if [[ $BLOCKING -gt 0 ]]; then
-  if [[ "$TEST_NEGATIVE" == true ]]; then
-    echo "✅ TEST NEGATYWNY UDANY: Poprawnie wykryto $BLOCKING naruszeń blokujących."
+  if [[ "$level" == "BLOCKING" ]]; then
+    BLOCKING=$((BLOCKING+1)); DETECTED_RULES+="$rule "
+    ROWS+="BLOCKING|$rule|$path:$line|$snip"$'\n'
   else
-    echo "❌ ADVERSARIAL REVIEW FAILED: Napraw BLOCKING przed REVIEW."
+    ADVISORY=$((ADVISORY+1)); ROWS+="ADVISORY|$rule|$path:$line|$snip"$'\n'
+  fi
+done < "$FINDINGS_FILE"
+
+# ---------------------------------------------------------------- raport
+echo ""
+echo "───────────────────────────────────────────────────────────────────────────────"
+printf "| %-8s | %-9s | %-34s | %s\n" "Poziom" "Grzech" "Lokalizacja" "Opis / fragment"
+echo "───────────────────────────────────────────────────────────────────────────────"
+if [[ -z "$ROWS" ]]; then
+  printf "| %-8s | %-9s | %-34s | %s\n" "PASS" "-" "-" "Brak grzechów w liniach dodawanych."
+else
+  while IFS='|' read -r lvl rl loc snip; do
+    [[ -z "${lvl:-}" ]] && continue
+    desc="$snip"
+    case "$rl" in
+      S1) desc="Silent fallback ukrywa błąd (7.9) :: $snip" ;;
+      S2) desc="!important niszczy kaskadę (7.4) :: $snip" ;;
+      S3) desc="Asercja pozorna, przejdzie dla pustego obiektu (7.9) :: $snip" ;;
+      S4) desc="Prawdopodobny sekret w kodzie :: $snip" ;;
+      S5) desc="DROP bez -- APPROVED_DESTRUCTIVE (7.18) :: $snip" ;;
+      S6) desc="Nowa zależność bez uzasadnienia w CP :: $snip" ;;
+      S7) desc="Tenant z niezaufanego payloadu (7.4) :: $snip" ;;
+    esac
+    printf "| %-8s | %-9s | %-34s | %s\n" "$lvl" "$rl" "$loc" "$desc"
+  done <<< "$ROWS"
+fi
+echo "───────────────────────────────────────────────────────────────────────────────"
+UNIQ_RULES="$(tr ' ' '\n' <<< "$DETECTED_RULES" | grep -v '^$' | sort -u | tr '\n' ' ' || true)"
+echo "Podsumowanie: BLOCKING=$BLOCKING, ADVISORY=$ADVISORY, ALLOWED=$ALLOWED"
+[[ -n "$UNIQ_RULES" ]] && echo "Wykryte klasy: ${UNIQ_RULES% }"
+
+if [[ "$TEST_NEGATIVE" == true ]]; then
+  if [[ $BLOCKING -gt 0 ]]; then
+    echo -e "${GREEN}✅ TEST NEGATYWNY UDANY: detektor zgłosił $BLOCKING naruszeń w $UNIQ_RULES${NC}"
+    echo -e "${YELLOW}   (tryb --test-negative zwraca 1, bo tak zachowuje się na realnym diffie; w CI użyj --self-test)${NC}"
+  else
+    echo -e "${RED}❌ TEST NEGATYWNY NIEUDANY: detektor nie zgłosił nic${NC}"
   fi
   exit 1
-else
-  echo "✅ ADVERSARIAL REVIEW PASSED: Diff spełnia wymogi architektoniczne."
-  exit 0
 fi
+
+if [[ "$SELF_TEST" == true ]]; then
+  classes=$(tr ' ' '\n' <<< "$DETECTED_RULES" | grep -v '^$' | sort -u | wc -l | tr -d ' ')
+  if [[ "$classes" -ge 4 && $BLOCKING -ge 4 ]]; then
+    echo -e "${GREEN}✅ SELF-TEST PASSED: detektor rozpoznał $classes klas grzechów ($UNIQ_RULES)${NC}"
+    exit 0
+  fi
+  echo -e "${RED}❌ SELF-TEST FAILED: oczekiwano >=4 klas, wykryto $classes ($UNIQ_RULES). To regresja bramki.${NC}"
+  exit 1
+fi
+
+if [[ $BLOCKING -gt 0 ]]; then
+  echo -e "${RED}❌ ADVERSARIAL REVIEW FAILED: napraw BLOCKING przed REVIEW.${NC}"
+  echo "   Wyjątek? Dopisz do .adversarial-allow: <RULE> <glob> owner=@kto reason=\"...\" expires=RRRR-MM-DD"
+  exit 1
+fi
+echo -e "${GREEN}✅ ADVERSARIAL REVIEW PASSED: linie dodawane czyste.${NC}"
+exit 0

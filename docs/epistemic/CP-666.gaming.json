@@ -1,0 +1,43 @@
+{
+  "ticket": "CP-666",
+  "commit": "deadbee",
+  "code_changed": true,
+  "confidence": "high",
+  "claims": [
+    {
+      "id": "C1",
+      "text": "Wszystko działa, sprawdziłem.",
+      "kind": "static",
+      "verified": true
+    },
+    {
+      "id": "C2",
+      "text": "Testy przechodzą.",
+      "kind": "static",
+      "cmd": "echo '1 passed'; echo 'brak bledow'",
+      "expected": "3 passed, 0 failed",
+      "observed": "1 passed",
+      "verified": true
+    },
+    {
+      "id": "C3",
+      "text": "Wszystkie 214 testów przechodzi (dowód sam się potwierdza).",
+      "kind": "behavior",
+      "cmd": "echo '214 passed, 0 failed'",
+      "expected": "214 passed, 0 failed",
+      "observed": "214 passed, 0 failed",
+      "verified": true
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H1",
+      "text": "To był cache.",
+      "predicted": "test przejdzie",
+      "predicted_if_wrong": "test przejdzie",
+      "result": "confirmed"
+    }
+  ],
+  "tests": { "added": 0, "removed": 2 },
+  "mutations": { "killed": 1, "survived": 4 }
+}

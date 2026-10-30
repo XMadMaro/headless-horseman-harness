@@ -1,0 +1,35 @@
+{
+  "ticket": "CP-150",
+  "step": "scope",
+  "question": "Co dokładnie dowozimy w tym kroku?",
+  "options": [
+    {
+      "id": "A",
+      "label": "tylko filtr linii dodawanych w skanerze",
+      "cost": "1 plik, 0 nowych reguł"
+    },
+    {
+      "id": "B",
+      "label": "przepisanie skanera na semgrep",
+      "cost": "nowa zależność + konfiguracja"
+    }
+  ],
+  "chosen": "A",
+  "why": "B dodaje zależność i wymaga osobnego biletu; A naprawia błąd u źródła w jednym miejscu.",
+  "must_not": [
+    "nie zmieniamy zestawu reguł S1-S7",
+    "nie dodajemy zależności zewnętrznych"
+  ],
+  "done_when": "bash scripts/adversarial-review.sh --self-test zwraca 0 i wykrywa 5 klas",
+  "reversible": true,
+  "blast_radius": [
+    "scripts/adversarial-review.sh",
+    "tests/fixtures/**"
+  ],
+  "asked_by": "agent",
+  "asked_at": "2026-10-29T10:00:00",
+  "confirmed_by": "maro",
+  "confirmed_at": "2026-10-29T10:05:00",
+  "confirmation": "Potwierdzam: 2026-10-29, CP-150, scope=A",
+  "expires_at": "2026-12-31"
+}

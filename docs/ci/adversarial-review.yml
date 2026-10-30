@@ -1,0 +1,20 @@
+name: Adversarial Review
+on: [pull_request]
+
+jobs:
+  adversarial:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Bramka właściwa: skanuje TYLKO linie dodawane, raportuje prawdziwe plik:linia.
+      # exit 1 = BLOCKING znaleziony -> job czerwony (bez maskowania).
+      - name: Skan grzechów na diffie PR
+        run: bash scripts/adversarial-review.sh "origin/${{ github.base_ref }}"
+
+      # Test własny detektora: jeśli regresja (np. wzorzec przestanie pasować),
+      # ten krok zwróci 1 i zablokuje merge. Tu NIE WOLNO dopisywać "|| echo".
+      - name: Test własny detektora (regresja = czerwono)
+        run: bash scripts/adversarial-review.sh --self-test

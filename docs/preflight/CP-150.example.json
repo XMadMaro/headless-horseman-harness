@@ -1,0 +1,52 @@
+{
+  "_disclaimer": "PRZYKŁAD STRUKTURY. Cytaty i ścieżki są prawdziwe (istnieją w tym repo), więc bramka przechodzi; zadanie jest ilustracyjne.",
+  "ticket": "CP-150",
+  "kind": "refactor",
+  "intent": {
+    "falsifiable": "scripts/adversarial-review.sh nie zgłasza fałszywego alarmu, gdy jedyną zmianą w diffie jest usunięcie '!important'.",
+    "non_goals": [
+      "nie zmieniamy zestawu reguł S1-S7 (tylko kierunek skanowania)",
+      "nie ruszamy formatu raportu"
+    ]
+  },
+  "files_touched": [
+    {
+      "path": "scripts/adversarial-review.sh",
+      "line": 6,
+      "quote": "skanujemy WYŁĄCZNIE linie dodawane (+)",
+      "why": "tu jest miejsce, gdzie diff jest filtrowany do linii dodawanych"
+    },
+    {
+      "path": "AGENTS.md",
+      "line": 29,
+      "quote": "Subtract Before You Add:** sekcja `Co usuwamy` przed `Co dodajemy`",
+      "why": "reguła, którą obecna implementacja łamała (karała usuwanie)"
+    }
+  ],
+  "subtract": [
+    {
+      "path": "scripts/adversarial-review.sh",
+      "what": "stary blok grep po całym diffie (karał linie usuwane) i zahardkodowana lokalizacja apps/admin/src/app/test.tsx:3",
+      "action": "replace"
+    }
+  ],
+  "plan": [
+    "subtract",
+    "diagnose",
+    "design",
+    "test",
+    "implement",
+    "verify"
+  ],
+  "budget": {
+    "max_files": 2,
+    "max_loc": 180
+  },
+  "reuse": [
+    {
+      "new": "has_secret",
+      "reuse_of": null,
+      "justification": "brak odpowiednika w repo; mawk nie wspiera interwałów, więc potrzebna funkcja licząca token"
+    }
+  ]
+}

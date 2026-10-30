@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "note": "Testy akceptacyjne, których agent nie widzi. Zmiana = --seal + gate-lock --update + review człowieka.",
+  "tests": [
+    {
+      "name": "lock-intact",
+      "file": "hidden/acceptance/01_lock_intact.sh",
+      "sha256": "b66a0cd223621963cd05aa8c3db52b0e73f9c79616d01571544fbcdeb0d456d0",
+      "expects": "harness.lock zgodny z plikami bramek (uprząż nierozbrojona)"
+    },
+    {
+      "name": "fixtures-validate",
+      "file": "hidden/acceptance/02_fixtures_validate.sh",
+      "sha256": "49260790d8a18d45c743a0cfc89204164930157148ae2715e85dc4fba9ff094b",
+      "expects": "wzorce preflight i decyzji nadal przechodzą swoje bramki"
+    }
+  ]
+}

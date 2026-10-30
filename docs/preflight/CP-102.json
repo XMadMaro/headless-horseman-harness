@@ -1,0 +1,92 @@
+{
+  "_disclaimer": "Artefakt spisany PRZED zmianą kodu (poprawka błędu z CP-101, gdzie powstał przy commitcie). Cytaty istnieją w plikach w chwili pisania.",
+  "ticket": "CP-102",
+  "kind": "refactor",
+  "intent": {
+    "falsifiable": "Po zmianie `grep -cE '^## 7\\.[0-9]+' AGENTS.md` = 8, `bash scripts/gate-lock.sh --check` = 0, a `bash scripts/selftest.sh` = 52/52. Usunięcie którejkolwiek reguły z RULES_EXPECTED ma czerwienić lock.",
+    "non_goals": [
+      "Nie zmieniam logiki żadnej bramki (preflight/epistemic/decision/acceptance) — tylko numerację i tekst AGENTS.md",
+      "Nie usuwam treści merytorycznej: 13 nagłówków staje się punktami w 8 ocalałych",
+      "Nie ruszam docs/architecture/MONOREPO-AGENT-PLATFORM.md (decyzja człowieka)"
+    ]
+  },
+  "files_touched": [
+    {
+      "path": "AGENTS.md",
+      "line": 59,
+      "quote": "Dyscyplina ub-mode (Uncle Bob)",
+      "why": "tu zostaje Subtract/Attack-the-Premise i tu wchłaniamy reguły 7.16, 7.7"
+    },
+    {
+      "path": "scripts/gate-lock.sh",
+      "line": 43,
+      "quote": "RULES_EXPECTED=",
+      "why": "zbiór reguł wymaganych musi zejść z 21 do 8, inaczej lock słusznie padnie"
+    },
+    {
+      "path": "skills/ub-mode/SKILL.md",
+      "line": 22,
+      "quote": "Attack the Premise (7.17)",
+      "why": "skill odwołuje się do usuwanych numerów; trzeba przemapować na ocalałe"
+    },
+    {
+      "path": "README.en.md",
+      "line": 91,
+      "quote": "Not counted in the eight",
+      "why": "README musi podawać prawdziwą liczbę reguł po zmianie"
+    },
+    {
+      "path": "scripts/adversarial-review.sh",
+      "line": 275,
+      "quote": "przejdzie dla pustego obiektu (7.9)",
+      "why": "komunikaty S2/S3/S7 odwoływały się do usuniętych numerów"
+    },
+    {
+      "path": "scripts/selftest.sh",
+      "line": 212,
+      "quote": "puste zaślepki zamiast reguł",
+      "why": "etykieta mówiła '18', a reguł jest 8 — licznik nie może kłamać"
+    },
+    {
+      "path": "skills/grill-me/SKILL.md",
+      "line": 3,
+      "quote": "(Reguła 7.21)",
+      "why": "skill kierował do reguły 7.13, która przestała istnieć"
+    },
+    {
+      "path": "docs/preflight/CP-150.example.json",
+      "line": 15,
+      "quote": "Subtract Before You Add",
+      "why": "przykład cytował przepisany fragment AGENTS.md — bramka słusznie padła"
+    }
+  ],
+  "subtract": [
+    {
+      "path": "AGENTS.md",
+      "action": "merge",
+      "what": "13 nagłówków reguł (7.1,7.2,7.3,7.5,7.6,7.7,7.8,7.10,7.12,7.13,7.14,7.15,7.16) wchłonięte jako punkty w 8 ocalałych; 7.8 kasujemy bez śladu, bo wskazywał nieistniejące narzędzia (xerj, codebase-memory)"
+    },
+    {
+      "path": "scripts/gate-lock.sh",
+      "action": "narrow",
+      "what": "RULES_EXPECTED z 21 identyfikatorów do 8 — zbiór, nie licznik"
+    }
+  ],
+  "plan": [
+    "subtract",
+    "diagnose",
+    "implement",
+    "verify"
+  ],
+  "budget": {
+    "max_files": 8,
+    "max_loc": 90
+  },
+  "reuse": [
+    {
+      "new": "RULES_KEPT",
+      "reuse_of": null,
+      "justification": "brak istniejącej definicji; stała lokalna w skrypcie, nazwa unikalna w repo"
+    }
+  ]
+}
