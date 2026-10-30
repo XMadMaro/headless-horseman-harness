@@ -2,7 +2,7 @@
 # Zmiana wymaga review (CODEOWNERS na scripts/** i AGENTS.md).
 format=1
 rules=7.1 7.2 7.3 7.4 7.5 7.6 7.7 7.8 7.9 7.10 7.11 7.12 7.13 7.14 7.15 7.16 7.17 7.18 7.19 7.20 7.21
-sha256 9915f49b96f455bd25028cd652aa55ce2d3ff3fd9057af591679d2978fc82658  AGENTS.md
+sha256 6b54fdc525464d7a4b2c8025f5251ecd4cc506a8d4f339b3c7b993c6c380ff20  AGENTS.md
 sha256 63eb78a6718012be1e5e4542ec032464b2894a02af0c3761eac2fa7495876618  skills/ROUTING.md
 sha256 4471130ecefd519f05f5b342c993f46ae3dddf78b3201c9f9aa2e730a9079e5a  scripts/adversarial-review.sh
 sha256 0c6db8fe1d04f585b9b6a64a8264df4da496e4c37d36273dabbd5d4b97e01680  scripts/docs-provenance.py

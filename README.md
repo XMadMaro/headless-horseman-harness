@@ -232,7 +232,6 @@ headless-horseman-harness/
 │   ├── acceptance-gate.py    # Testy poza zasięgiem agenta (tamper=STOP, bez oracle)
 │   ├── install-hooks.sh      # Hooki git z backupem cudzych
 │   ├── ub-metrics.sh         # Pomiary złożoności cyklomatycznej i duplikacji
-│   └── config.sh             # Przykładowe wartości ścieżek (NIE panel konfiguracji)
 ├── docs/preflight/           # Artefakty 7.19 (schemat + wzorce: uczciwy / frankenstein)
 ├── docs/epistemic/           # Artefakty 7.20 (schemat + wzorce: uczciwy / gra w bramkę)
 ├── docs/decisions/           # Artefakty 7.21 (schemat + wzorce: podpisana / samo-akceptacja)

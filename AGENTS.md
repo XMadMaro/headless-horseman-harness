@@ -124,11 +124,10 @@ Dokładnie 1 `git push origin main` per łańcuch zadań po zielonych bramkach l
 
 ## Konfiguracja monorepo
 
-Edytuj `scripts/config.sh`:
+Nie ma pliku konfiguracyjnego. Wzorce ścieżek są zapisane w narzędziach
+(`adversarial-review.sh`, `docs-provenance.py`) — zmiana struktury monorepo wymaga
+zmiany tam, a nie w „panelu", którego nikt nie czytał.
 
-```bash
-APPS_GLOB="apps/* packages/* src/*"          # STANDARD_TRACK
-DOCS_GLOB="*.md .env.example .github/**"      # FAST_TRACK
-MIGRATIONS_GLOB="**/migrations/* **/alembic/**"
-ENABLE_TENANT_CHECK=false                     # true jeśli masz RLS/multi-tenant
-```
+Wcześniej istniał `scripts/config.sh`: opisany tutaj i w README, ale **nigdy nie
+ładowany** przez żaden skrypt (0 wystąpień `source`). Usunięty 2026-10-30 — reguła
+7.17 mówi o odejmowaniu, więc odejmujemy także własne złudzenia.

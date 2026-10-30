@@ -8,4 +8,4 @@
 | CP-001 | Przykład: dodanie endpointu /health | DRAFT | STANDARD_TRACK | @you |
 | CP-002 | Przykład docs-only: aktualizacja README | DRAFT | FAST_TRACK | @you |
 
-> Po zamknięciu zadania natychmiast wpisz kandydata z `backlog.md`. Pusty plik = naruszenie 2.9.
+> Po zamknięciu zadania natychmiast wpisz kandydata. Plik `backlog.md` nie istnieje — lista kandydatów mieszka tutaj. Pusty plik = naruszenie 2.9.
