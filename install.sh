@@ -34,6 +34,31 @@ if [[ $missing -eq 1 ]]; then
   exit 1
 fi
 
+echo "🔍 Sprawdzanie stosu narzędziowego i rekomendowanego ekosystemu..."
+if command -v python3 >/dev/null 2>&1; then
+  echo "  ✅ python3: $(python3 --version)"
+else
+  echo "  ❌ python3: BRAK (Wymagany do bramek preflight, epistemic i provenance)"
+  exit 1
+fi
+
+if command -v nx >/dev/null 2>&1 || [ -f "node_modules/.bin/nx" ]; then
+  echo "  ✅ nx: dostępny"
+else
+  echo "  ⚠️  nx: BRAK (Zalecane: npm install -g nx lub npm install -D nx dla monorepo)"
+fi
+
+if curl -sf http://127.0.0.1:8080/health >/dev/null 2>&1 || command -v xerj >/dev/null 2>&1; then
+  echo "  ✅ xerj: aktywny lub zainstalowany (BM25)"
+else
+  echo "  ⚠️  xerj: NIEWYKRYTY (Zalecane: uruchom xerj.service dla szybkiego wyszukiwania BM25)"
+fi
+
+echo "📋 Rekomendowane serwery MCP w konfiguracji agenta/IDE:"
+echo "  🔹 codebase-memory-mcp  -> Graf wiedzy AST (search_graph, trace_path)"
+echo "  🔹 Hindsight MCP        -> Trwała pamięć architektoniczna (https://hindsight.vectorize.io/)"
+echo ""
+
 echo "1/3 uprawnienia"
 chmod +x scripts/*.sh 2>/dev/null || true
 chmod +x scripts/*.py 2>/dev/null || true

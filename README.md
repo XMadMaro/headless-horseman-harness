@@ -55,6 +55,19 @@ echo "profile=hilux" > hhh.profile   # domyślnie i tak tyle jest
 
 ---
 
+## 🧩 Wymagany Stos Narzędziowy (Ecosystem & Prerequisites)
+
+Headless Horseman Harness nie działa w próżni. Aby fizycznie odciąć agentów od halucynacji, amnezji i ślepego zgadywania, uprząż opiera się na 4 filarach ekosystemu:
+
+| Filar / Narzędzie | Rola w uprzęży | Co daje i dlaczego jest wymagane? |
+|---|---|---|
+| **Nx Monorepo (`nx`)** | *Orkiestracja & Bramki CI* | Weryfikacja pakietów (`nx test <project>`) oraz bramka zmian dotkniętych (`nx affected -t test,lint,typecheck`). Zabezpiecza przed testowaniem tylko pojedynczych plików. |
+| **Codebase Memory Graph (`codebase-memory-mcp`)** | *Nawigacja AST (Zero Blind Grep)* | Serwer MCP grafu bazy kodu. Pozwala agentom śledzić wywołania w górę i w dół (`trace_path`), badać symbole (`search_graph`) i pobierać snipety (`get_code_snippet`) bez zaśmiecania okna kontekstu niecelnymi grepami. |
+| **Lokalny silnik BM25 (`xerj`)** | *Szybkie wyszukiwanie pełnotekstowe* | Lokalny demon BM25 (`:8080` REST / `:9200` ES-compat). Błyskawicznie przeszukuje kod i dokumentację (`xerj search --prefix cp "<query>"`), oszczędzając tokeny i redukując czas odpowiedzi agenta. |
+| **Pamięć Długoterminowa ([Hindsight](https://hindsight.vectorize.io/))** | *Trwała pamięć architektoniczna* | Serwer MCP eliminujący amnezję agentów między sesjami. Przechowuje decyzje projektowe (ADR), ustalenia biznesowe i stan inicjatyw (`hindsight_search_knowledge_pages`), chroniąc przed ponownym negocjowaniem raz podjętych ustaleń. |
+
+---
+
 ## 🏆 Battle-Tested Evidence: Case Study CityPulse
 
 Uprząż została wyjęta bezpośrednio z żywego projektu produkcyjnego **[CityPulse](https://github.com/XMadMaro/CityPulseV2)** (Gov-Tech monorepo, 30k+ LOC, obsługa gmin i urzędów):

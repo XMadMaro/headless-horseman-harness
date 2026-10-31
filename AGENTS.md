@@ -57,6 +57,7 @@ Zakaz tworzenia/edycji kodu bez artefaktu `docs/preflight/CP-xxx.json` (bramka: 
 
 ## 7.20 Budżet, anty-pętla, koniec przepalania tokenów
 - **Budżety:** krok ≤ 8k tokenów, bilet ≤ 40k, sesja: przy 70% → handoff i nowa sesja (nie „dociąganie”).
+- **Nawigacja i pamięć:** zakaz ślepego `grep -rn`. Obowiązkowa triada: Hindsight MCP (ADR/architektura), Codebase Memory MCP (`search_graph`, `trace_path`) i lokalny demon `xerj` (BM25).
 - **Hipotezy:** 2 hipotezy na bug, 2 próby na hipotezę. Odrzucona hipoteza trafia do `.agent/state/ledger.jsonl` i **nie wraca**.
 - **Breaker:** hash zbioru niepowodzeń + znormalizowany diff bez zmian 2× ⇒ STOP (exit 3), pytanie do człowieka. Kręcenie się w miejscu to najdroższy błąd agenta.
 - **Dowody:** twierdzenie bez komendy nie istnieje (`scripts/epistemic-gate.py`, tryb `--execute` w CI).

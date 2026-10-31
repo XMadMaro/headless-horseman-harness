@@ -2,7 +2,7 @@
 # Zmiana wymaga review (CODEOWNERS na scripts/** i AGENTS.md).
 format=1
 rules=7.4 7.9 7.11 7.17 7.18 7.19 7.20 7.21
-sha256 91012240c7d110408dca39650ff52e6ed598410b805bcb2f2552f96e10020209  AGENTS.md
+sha256 f6fadedfbef5ecff1ad5ff51e84151bea1a8a1e37827348fe93ed214f260c240  AGENTS.md
 sha256 63eb78a6718012be1e5e4542ec032464b2894a02af0c3761eac2fa7495876618  skills/ROUTING.md
 sha256 0ddd2f49cef43d47a754297f84d947c880370b33a338a3c814e7cdebd8238846  scripts/adversarial-review.sh
 sha256 5daf238e6bce1d90800e51cf7e6a16e19bd33ec15dee8f36ed8a8fa8bf1930eb  scripts/docs-provenance.py
@@ -14,7 +14,7 @@ sha256 5c6d9061d75410fb1eff64fd3c78226c343a3bd27729739146a65efa7ac4b07d  scripts
 sha256 48740661f68069a3199d04681cf33f134144c25e63becad3e17f5b7df48e7c01  scripts/selftest.sh
 sha256 dd3ca6fa36c10ad3a9202f5bd81cd3531395e1c0ff02b43cebde57d98a8c6ceb  scripts/decision-gate.py
 sha256 cf427fe1cbce4c0d33e6b57bac41458656e928cc8ec18576c123b55d44ee1470  scripts/hhh-run.py
-sha256 7803bb5ffe247218fbe4a2c700173405ec4f00e28b65923d2bb48a6f07bddbed  install.sh
+sha256 f181c8f9a86ab3376a00556181a93c4efa5290475b1a82e192fd9a8c9a14e686  install.sh
 sha256 104096e8c5651bb9ee53b6dbd172eb033f115fd00f4e64c5916a227b5e42b397  .adversarial-allow
 sha256 d3687f37916825159a93801d427ef3cfac00dd2fa596c9ebba131dfe19b401c9  scripts/acceptance-gate.py
 sha256 654d6ec2e1f689c06e46083de6be7bc41340dd3e7b168ef8904dc8de500e86d3  hidden/manifest.json

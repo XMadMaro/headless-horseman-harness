@@ -92,6 +92,19 @@ Not counted in the eight: `acceptance-gate.py` (see [What the agent cannot see](
 
 ---
 
+## 🧩 Recommended Ecosystem Prerequisites
+
+Headless Horseman Harness does not operate in a vacuum. To eliminate agent amnesia, hallucinations, and blind greps, the harness relies on 4 ecosystem pillars:
+
+| Pillar / Tool | Role in Harness | What it delivers & Why it is needed |
+|---|---|---|
+| **Nx Monorepo (`nx`)** | *Orchestration & CI Gates* | Enforces package test isolation (`nx test <project>`) and affected package checking (`nx affected -t test,lint,typecheck`). Protects against testing isolated single files. |
+| **Codebase Memory Graph (`codebase-memory-mcp`)** | *AST Navigation (Zero Blind Grep)* | Code knowledge graph MCP server. Allows agents to inspect symbols (`search_graph`), inbound/outbound calls (`trace_path`), and snippets (`get_code_snippet`) without exhausting context budgets with blind greps. |
+| **Local BM25 Index (`xerj`)** | *Ultra-fast fulltext search* | Local BM25 search daemon (`:8080` REST / `:9200` ES-compat). Rapidly indexes and queries code and documentation (`xerj search --prefix cp "<query>"`), saving tokens and latency. |
+| **Persistent Architectural Memory ([Hindsight](https://hindsight.vectorize.io/))** | *Long-term context across sessions* | MCP server eliminating agent amnesia. Remembers ADRs, settled architectural decisions, and initiative goals (`hindsight_search_knowledge_pages`), preventing agents from re-litigating settled decisions. |
+
+---
+
 ## Quick start
 
 ```bash
